@@ -28,8 +28,12 @@ If MRT2 can be removed and the demo still works, we are off-challenge.
 
 ## Our north star (AURALINK)
 An adaptive bio-music instrument: **live human biometrics (heart rate) play
-Magenta RealTime 2 as a musical instrument.** Two synced users generate
-interpersonal counterpoint from their physiological relationship.
+Magenta RealTime 2 as a musical instrument.**
+
+**Hackathon scope: a single user.** One person's heartbeat plays Magenta live.
+Two-user interpersonal counterpoint is a compelling extension but is a
+**post-hackathon future goal** (see Build plan) — we are not building it this
+weekend.
 
 The heartbeat is the *controller*; **Magenta RT2 is the instrument/sound engine.**
 
@@ -55,20 +59,26 @@ The heartbeat is the *controller*; **Magenta RT2 is the instrument/sound engine.
   `mrt2_small` (real-time on this chip). This is the heartbeat of the demo.
 - **P0 — Control hook:** a `set_*()` API that retargets MRT2 live (style/prompt,
   tempo, drum/note conditioning) so an external signal can drive it.
-- **P1 — Biometric input:** Arduino heart-rate → BPM / onsets feeding the hook.
-  Until hardware arrives, drive the hook from a **simulated heartbeat** so the
-  whole pipeline is demoable today.
+- **P1 — Biometric input:** live heart rate via [Pulsoid](https://pulsoid.net/)
+  (e.g. an Apple Watch) → BPM feeding the hook. A **simulated heartbeat** drives
+  the whole pipeline when no monitor is connected, so it is always demoable.
 - **P1 — Musical mapping:** define how HR maps to MRT2 (tempo, intensity, prompt
   mood, drum density). Make it audibly responsive.
-- **P2 — Dual-user / interpersonal:** two pulses → counterpoint / polyrhythm.
 - **P2 — Sound design polish & a kick that actually sounds good** (prompt tuning,
   lower temperature, `drums` conditioning; sample only as a supporting layer).
 - **P3 — Visuals** mapping the live data for the audience.
 
+### Future goals (post-hackathon)
+- **Two-user / interpersonal counterpoint:** two pulses → counterpoint /
+  polyrhythm from the players' physiological relationship. Likely via Pulsoid
+  **room mode** (each member streams BPM to a shared channel). This is the
+  product's long-term differentiator but is **out of scope for the hackathon** —
+  we are focused on getting one user working end-to-end first.
+
 ## Sound-quality notes for MRT2 (the earlier kick sounded bad — fixable in Magenta)
 - NO SAMPLES. Magenta generates the kick and everything else.
 - Prompt richer than "kick drum": e.g. *"punchy four-on-the-floor techno kick,
-  tight, driving, deep sub"* (see HR_ZONES in auralink.py).
+  tight, driving, deep sub"* (see HR_ZONES in auralink/app.py).
 - Lower `temperature` (~1.0) for a steadier kick; `drums=[1]` conditioning is on.
 - Generate a full groove (kick + bass + texture), not an isolated transient.
 
@@ -76,12 +86,13 @@ The heartbeat is the *controller*; **Magenta RT2 is the instrument/sound engine.
 - ✅ Env ready: `.venv` (py3.12), `magenta-rt[mlx]` installed, `mrt2_small`
   checkpoint + shared resources downloaded. MRT2 generates at ~0.78× real-time
   factor on the M1 Pro (keeps ahead of playback).
-- ✅ **On-challenge live instrument working.** `auralink.py` = heartbeat → MRT2
+- ✅ **On-challenge live instrument working.** `auralink/app.py` = heartbeat → MRT2
   style; Magenta generates ALL audio (kick included). **No samples.**
-  - `magenta_engine.py` — MagentaEngine (live streaming + `set_style()` hook).
-  - `heartbeat.py` — SimulatedHeartbeat (demo) + SerialHeartbeat (Arduino stub).
+  - `auralink/engine.py` — MagentaEngine (live streaming + `set_style()` hook).
+  - `auralink/heartbeat.py` — SimulatedHeartbeat (demo) + PulsoidHeartbeat (live).
   - Verified: `--selftest` real-time OK; `--render` produces valid Magenta audio.
-- ⏭ Next: tune kick prompt/temperature for punch; wire real Arduino; dual-user.
+- ⏭ Next: tune kick prompt/temperature for punch; wire the live Pulsoid heart
+  rate for one user. Two-user counterpoint is a post-hackathon future goal.
 
 ## Logistics
 - **Sun 7 Jun, 4:00 PM** — team presentations. 3:00 PM doc/prep phase.

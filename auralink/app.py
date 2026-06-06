@@ -13,14 +13,14 @@ selecting the live style/prompt for its heart-rate zone (calm pads -> steady
 the prompt, all re-embedded on the fly via MagentaEngine.set_style().
 
 Run live:
-    python auralink.py                  # simulated heartbeat ~60 BPM
-    python auralink.py --bpm 80 --steady
+    python -m auralink                  # simulated heartbeat ~60 BPM
+    python -m auralink --bpm 80 --steady
 
 Offline (no audio device; writes a WAV to verify the pipeline):
-    python auralink.py --render 12 --bpm 90
+    python -m auralink --render 12 --bpm 90
 
 Quick model check:
-    python auralink.py --selftest
+    python -m auralink --selftest
 """
 
 from __future__ import annotations
@@ -30,8 +30,13 @@ import time
 
 import numpy as np
 
-from heartbeat import HeartbeatSource, SimulatedHeartbeat
-from magenta_engine import SAMPLE_RATE, MagentaEngine
+from .engine import SAMPLE_RATE, MagentaEngine
+from .heartbeat import (
+    HeartbeatSource,
+    PulsoidHeartbeat,
+    SimulatedHeartbeat,
+    check_pulsoid,
+)
 
 # Heart-rate zones -> live Magenta style. The prompt is the entire instrument;
 # Magenta generates the kick and everything else. A `{bpm}` token is filled with
@@ -148,7 +153,7 @@ class Auralink:
 
 
 def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
-    parser = argparse.ArgumentParser(description=__doc__)
+    parser = argparse.ArgumentParser(prog="auralink", description=__doc__)
     parser.add_argument("--bpm", type=float, default=60.0, help="Base heart rate (BPM).")
     parser.add_argument(
         "--steady", action="store_true", help="Pin a fixed heart rate (no drift)."
@@ -172,11 +177,42 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
         action="store_true",
         help="Generate a few Magenta chunks, report real-time factor, then exit.",
     )
+    parser.add_argument(
+        "--pulsoid",
+        action="store_true",
+        help="Use a live Pulsoid heart rate (e.g. Apple Watch) instead of the "
+        "simulated heartbeat.",
+    )
+    parser.add_argument(
+        "--pulsoid-token",
+        default=None,
+        help="Pulsoid access token. Defaults to the PULSOID_TOKEN env var. "
+        "Keep it secret; never commit it.",
+    )
+    parser.add_argument(
+        "--pulsoid-check",
+        action="store_true",
+        help="Connect to Pulsoid and print live heart-rate messages for a few "
+        "seconds, then exit. Verifies the token/watch without loading Magenta.",
+    )
     return parser.parse_args(argv)
 
 
 def main(argv: list[str] | None = None) -> int:
     args = parse_args(argv)
+
+    # Load a local .env (e.g. PULSOID_TOKEN) if python-dotenv is installed.
+    # Optional: the app still works with plain environment variables.
+    try:
+        from dotenv import load_dotenv
+
+        load_dotenv()
+    except ImportError:
+        pass
+
+    # Quick Pulsoid connectivity check — no Magenta model needed.
+    if args.pulsoid_check:
+        return check_pulsoid(token=args.pulsoid_token)
 
     engine = MagentaEngine(size=args.size, temperature=args.temperature)
     engine.load_model()
@@ -186,7 +222,10 @@ def main(argv: list[str] | None = None) -> int:
         engine.selftest()
         return 0
 
-    heart = SimulatedHeartbeat(bpm=args.bpm, drift=0.0 if args.steady else 8.0)
+    if args.pulsoid:
+        heart: HeartbeatSource = PulsoidHeartbeat(token=args.pulsoid_token)
+    else:
+        heart = SimulatedHeartbeat(bpm=args.bpm, drift=0.0 if args.steady else 8.0)
     app = Auralink(engine=engine, heart=heart)
 
     if args.render is not None:
@@ -194,7 +233,3 @@ def main(argv: list[str] | None = None) -> int:
     else:
         app.run()
     return 0
-
-
-if __name__ == "__main__":
-    raise SystemExit(main())

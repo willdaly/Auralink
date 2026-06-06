@@ -7,19 +7,21 @@
 ## What does it do?
 AURALINK is an adaptive bio-music framework designed to break the static relationship between listeners and music. By capturing real-time biometrics (heart rate, respiration) and vocal inputs, the system treats the human body as a digital musical instrument (DMI). 
 
-Its core innovation is **Interpersonal Bio-Feedback**: when two users sync their Aura Links, the system dynamically generates musical structures based on their physiological relationship. If their heart rates align, the harmony resolves; if they differ, the system creates complex polyrhythms and syncopations (e.g., one heart triggers the kick drum, the other dictates the subdivision). It acts as a shared biological canvas for wellness, performance, and human connection.
+Its long-term core innovation is **Interpersonal Bio-Feedback**: when two users sync their Aura Links, the system dynamically generates musical structures based on their physiological relationship. If their heart rates align, the harmony resolves; if they differ, the system creates complex polyrhythms and syncopations (e.g., one heart triggers the kick drum, the other dictates the subdivision). It acts as a shared biological canvas for wellness, performance, and human connection. **For this hackathon we are focused on a single user**; the two-user interpersonal mode is a future goal for development after the event.
 
 ## What we plan to build during this Hackathon:
-We want to create a working Minimum Viable Product (MVP):
+We want to create a working Minimum Viable Product (MVP) **for a single user**:
 1. **Low-Latency Hardware:** A sensor setup that captures cardiac peaks (systole) with minimal delay.
 2. **Audio Engine Bridge:** A Max/MSP (or Pure Data/Ableton Live) patch that translates biometric triggers into MIDI parameters (e.g., your heartbeat triggers a TR-808 kick drum in real-time).
-3. **Dual-User Framework:** A basic interactive template where two distinct pulses can generate counterpoint, syncopation, and cross-modulations.
+
+### Future goal (post-hackathon)
+- **Dual-User Framework:** A basic interactive template where two distinct pulses can generate counterpoint, syncopation, and cross-modulations. This is a future goal for after the hackathon, not part of the MVP.
 
 ## Who I am & Who I'm looking for:
 I am a student at Berklee College of Music with an Audio Engineering background from SAE Institute. I bring the music theory, psychoacoustic concepts, audio signal flow, and the core vision for the adaptive composition templates (defining how parameters like HRV or pitch shift modulate harmonic extensions, filters, and dynamic ranges).
 
 **I am looking for hackers to join the team!** Especially:
-* **Hardware/Embedded Systems geeks** (Arduino, ESP32, or sensor hacking).
+* **Wearable/Biometric integration** (streaming live heart rate from an Apple Watch or other monitor via Pulsoid).
 * **Creative Coders** (Max/MSP, Pure Data, Python for DSP, or Ableton Live/Max for Live integration).
 * **UI/UX or Frontend developers** if we want to visually map the data in real-time.
 
@@ -35,12 +37,12 @@ A heartbeat plays Magenta RealTime 2 as a live instrument — **Magenta generate
 body (heartbeat)  ->  signal (BPM)  ->  Magenta RealTime 2  ->  sound
 ```
 
-The heart rate steers Magenta in real time: its heart-rate zone selects the live prompt (calm pads → steady 808 groove → driving techno → peak-time rave) and fills the tempo into the prompt, all re-embedded on the fly. Until the Arduino pulse sensor arrives, a simulated heartbeat drives the whole pipeline so it is demoable today.
+The heart rate steers Magenta in real time: its heart-rate zone selects the live prompt (calm pads → steady 808 groove → driving techno → peak-time rave) and fills the tempo into the prompt, all re-embedded on the fly. A live heart rate comes from [Pulsoid](https://pulsoid.net/) (e.g. an Apple Watch); a simulated heartbeat drives the whole pipeline when no monitor is connected, so it is always demoable.
 
 **Components**
-- [magenta_engine.py](magenta_engine.py) — `MagentaEngine`: MRT2 (`mrt2_small`) streaming continuously, steerable live via `set_style()`. This is the instrument.
-- [heartbeat.py](heartbeat.py) — `SimulatedHeartbeat` (demo) and `SerialHeartbeat` (Arduino, ready for hardware).
-- [auralink.py](auralink.py) — orchestrator mapping heart rate → Magenta style.
+- [auralink/engine.py](auralink/engine.py) — `MagentaEngine`: MRT2 (`mrt2_small`) streaming continuously, steerable live via `set_style()`. This is the instrument.
+- [auralink/heartbeat.py](auralink/heartbeat.py) — `SimulatedHeartbeat` (demo) and `PulsoidHeartbeat` (live heart rate via Pulsoid, e.g. an Apple Watch).
+- [auralink/app.py](auralink/app.py) — orchestrator mapping heart rate → Magenta style.
 
 **Requirements:** Apple Silicon Mac (`mrt2_small` streams in real time on an M1 Pro).
 
@@ -61,15 +63,32 @@ mrt checkpoints download mrt2_small.safetensors
 **Run:**
 ```bash
 # Play live: simulated heartbeat -> Magenta (Ctrl-C to stop)
-python auralink.py
-python auralink.py --bpm 80 --steady     # pin a fixed heart rate
+python -m auralink
+python -m auralink --bpm 80 --steady     # pin a fixed heart rate
 
 # Render to a WAV instead of playing live (no audio device needed)
-python auralink.py --render 12 --bpm 90
+python -m auralink --render 12 --bpm 90
 
 # Quick model + real-time check
-python auralink.py --selftest
+python -m auralink --selftest
 ```
+
+**Live heart rate (Pulsoid):**
+Stream your heart rate from an Apple Watch (or any monitor) via
+[Pulsoid](https://pulsoid.net/).
+```bash
+# 1. Create a Manual Token at https://pulsoid.net/ui/keys
+#    with the data:heart_rate:read scope.
+# 2. Put it in a local .env (gitignored):
+cp .env.example .env        # then edit .env and set PULSOID_TOKEN=...
+
+# 3. Verify the feed without loading Magenta (start your watch streaming first):
+python -m auralink --pulsoid-check
+
+# 4. Play live from your heartbeat:
+python -m auralink --pulsoid
+```
+
 
 `MagentaEngine.set_style()` is the live-control hook; the heartbeat calls it to retune Magenta from a real pulse in real time. See [HACKATHON.md](HACKATHON.md) for the challenge charter.
 
