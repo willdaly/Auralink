@@ -190,6 +190,15 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
 def main(argv: list[str] | None = None) -> int:
     args = parse_args(argv)
 
+    # Load a local .env (e.g. PULSOID_TOKEN) if python-dotenv is installed.
+    # Optional: the app still works with plain environment variables.
+    try:
+        from dotenv import load_dotenv
+
+        load_dotenv()
+    except ImportError:
+        pass
+
     engine = MagentaEngine(size=args.size, temperature=args.temperature)
     engine.load_model()
 

@@ -16,3 +16,6 @@ soundfile
 # Optional: only needed for a live Pulsoid heart rate (--pulsoid), e.g. an
 # Apple Watch. Requires a Pulsoid access token in the PULSOID_TOKEN env var.
 # websocket-client
+
+# Auto-loads a local .env file (e.g. PULSOID_TOKEN) at startup. See .env.example.
+python-dotenv
