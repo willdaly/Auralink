@@ -96,6 +96,7 @@ class MagentaEngine:
         temperature: float | None = None,
         play_drums: bool = True,
         tempo_mode: str = "pulse",
+        cfg_drums: float = 4.0,
     ) -> None:
         self.size = size
         self.bits = bits
@@ -104,6 +105,10 @@ class MagentaEngine:
         self.temperature = temperature
         self.play_drums = play_drums
         self.tempo_mode = tempo_mode  # "pulse" = tempo-locked drum onsets; "constant" = old always-on drums
+        # Classifier-free-guidance strength for the drum conditioning. Higher =
+        # the drum pulse is more authoritative, so an energetic style prompt
+        # can't override the heart-rate tempo. MRT2 default is 1.0 (a weak hint).
+        self.cfg_drums = cfg_drums
 
         self._mrt = None
         self._embedding = None
@@ -171,6 +176,7 @@ class MagentaEngine:
                 wav, self._state = self._mrt.generate(
                     style=embedding,
                     drums=drums,
+                    cfg_drums=self.cfg_drums,
                     temperature=temperature,
                     frames=1,
                     state=self._state,
@@ -182,6 +188,7 @@ class MagentaEngine:
         wav, self._state = self._mrt.generate(
             style=embedding,
             drums=drums,
+            cfg_drums=self.cfg_drums,
             temperature=temperature,
             frames=self.chunk_frames,
             state=self._state,
@@ -203,10 +210,26 @@ class MagentaEngine:
                 except queue.Full:
                     continue
 
+    def warmup_pulse(self, seconds: float = 2.0) -> None:
+        """Generate and discard audio so the model locks onto the drum pulse.
+
+        From a cold start the model takes a second or two to settle onto the
+        pulse rhythm — the opening sounds dense/fast before it locks. Running a
+        few discarded chunks here advances the streaming state past that
+        transient so the first audio anyone hears is already in time.
+        """
+        if self._mrt is None or self._embedding is None:
+            return
+        for _ in range(max(1, int(round(seconds)))):
+            if self._stop.is_set():
+                break
+            self._generate_chunk()
+
     def start(self) -> None:
         """Start the background generation thread and pre-buffer audio."""
         if self._embedding is None:
             raise RuntimeError("No style set. Call set_style() before start().")
+        self.warmup_pulse()  # settle onto the pulse before any audio is heard
         self._gen_thread = threading.Thread(target=self._generate_loop, daemon=True)
         self._gen_thread.start()
         while (
@@ -319,6 +342,7 @@ class MagentaEngine:
             wav, state = self._mrt.generate(
                 style=self._embedding,
                 drums=drums,
+                cfg_drums=self.cfg_drums,
                 temperature=self.temperature,
                 frames=1,
                 state=state,
