@@ -30,7 +30,7 @@ import time
 
 import numpy as np
 
-from heartbeat import HeartbeatSource, SimulatedHeartbeat
+from heartbeat import HeartbeatSource, PulsoidHeartbeat, SimulatedHeartbeat
 from magenta_engine import SAMPLE_RATE, MagentaEngine
 
 # Heart-rate zones -> live Magenta style. The prompt is the entire instrument;
@@ -172,6 +172,18 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
         action="store_true",
         help="Generate a few Magenta chunks, report real-time factor, then exit.",
     )
+    parser.add_argument(
+        "--pulsoid",
+        action="store_true",
+        help="Use a live Pulsoid heart rate (e.g. Apple Watch) instead of the "
+        "simulated heartbeat.",
+    )
+    parser.add_argument(
+        "--pulsoid-token",
+        default=None,
+        help="Pulsoid access token. Defaults to the PULSOID_TOKEN env var. "
+        "Keep it secret; never commit it.",
+    )
     return parser.parse_args(argv)
 
 
@@ -186,7 +198,10 @@ def main(argv: list[str] | None = None) -> int:
         engine.selftest()
         return 0
 
-    heart = SimulatedHeartbeat(bpm=args.bpm, drift=0.0 if args.steady else 8.0)
+    if args.pulsoid:
+        heart: HeartbeatSource = PulsoidHeartbeat(token=args.pulsoid_token)
+    else:
+        heart = SimulatedHeartbeat(bpm=args.bpm, drift=0.0 if args.steady else 8.0)
     app = Auralink(engine=engine, heart=heart)
 
     if args.render is not None:

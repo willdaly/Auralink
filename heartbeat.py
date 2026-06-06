@@ -119,3 +119,104 @@ class SerialHeartbeat(HeartbeatSource):
         self._stop.set()
         if self._thread is not None:
             self._thread.join(timeout=2.0)
+
+
+class PulsoidHeartbeat(HeartbeatSource):
+    """Live heart rate from a Pulsoid stream (e.g. an Apple Watch).
+
+    Pulsoid relays a phone/watch heart-rate monitor to a WebSocket. Each message
+    carries the current BPM, which we smooth into a stable tempo for Magenta. The
+    interface matches the other sources, so the orchestrator is unchanged.
+
+    The access token is a secret: pass it explicitly or set ``PULSOID_TOKEN`` in
+    the environment. Never commit it. Reading heart rate requires a Pulsoid token
+    with the ``data:heart_rate:read`` scope (paid/trial plan).
+    """
+
+    DEFAULT_URL = "wss://dev.pulsoid.net/api/v1/data/real_time"
+
+    def __init__(
+        self,
+        token: str | None = None,
+        smoothing: float = 0.3,
+        url: str | None = None,
+    ) -> None:
+        import os
+
+        self._token = token or os.environ.get("PULSOID_TOKEN")
+        if not self._token:
+            raise ValueError(
+                "Pulsoid access token missing. Pass token=... or set "
+                "PULSOID_TOKEN in the environment."
+            )
+        self._url = url or self.DEFAULT_URL
+        self._smoothing = smoothing
+        self._bpm = 60.0
+        self._got_first = False
+        self._stop = threading.Event()
+        self._thread: threading.Thread | None = None
+        self._ws = None
+        self._lock = threading.Lock()
+
+    @property
+    def bpm(self) -> float:
+        with self._lock:
+            return self._bpm
+
+    def start(self) -> None:
+        self._thread = threading.Thread(target=self._read_loop, daemon=True)
+        self._thread.start()
+
+    def _read_loop(self) -> None:
+        import json
+
+        import websocket  # websocket-client; only needed for Pulsoid
+
+        url = f"{self._url}?access_token={self._token}"
+        backoff = 1.0
+        while not self._stop.is_set():
+            try:
+                self._ws = websocket.create_connection(url, timeout=10)
+                backoff = 1.0  # reset after a successful connect
+                while not self._stop.is_set():
+                    raw = self._ws.recv()
+                    if not raw:
+                        continue
+                    try:
+                        payload = json.loads(raw)
+                        bpm = float(payload["data"]["heart_rate"])
+                    except (ValueError, KeyError, TypeError):
+                        continue
+                    if not 30.0 <= bpm <= 240.0:  # sanity window
+                        continue
+                    with self._lock:
+                        if self._got_first:
+                            self._bpm = (
+                                self._smoothing * bpm
+                                + (1 - self._smoothing) * self._bpm
+                            )
+                        else:
+                            self._bpm = bpm
+                            self._got_first = True
+            except Exception as exc:  # noqa: BLE001 - reconnect on any drop
+                if self._stop.is_set():
+                    break
+                print(f"Pulsoid connection lost ({exc}); reconnecting...")
+                self._stop.wait(backoff)
+                backoff = min(backoff * 2, 10.0)
+            finally:
+                self._close_ws()
+
+    def _close_ws(self) -> None:
+        if self._ws is not None:
+            try:
+                self._ws.close()
+            except Exception:  # noqa: BLE001
+                pass
+            self._ws = None
+
+    def stop(self) -> None:
+        self._stop.set()
+        self._close_ws()
+        if self._thread is not None:
+            self._thread.join(timeout=2.0)
