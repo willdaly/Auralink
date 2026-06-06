@@ -195,7 +195,28 @@ class MagentaEngine:
         )
         return np.asarray(wav.samples, dtype=np.float32)
 
+    @staticmethod
+    def _ensure_thread_stream() -> None:
+        """Register a default MLX stream for the current thread.
+
+        MLX streams are thread-local: a freshly spawned thread has none, so the
+        first GPU op raises "There is no Stream(gpu, 0) in current thread". The
+        model is loaded/warmed up on the main thread, but generation runs here
+        in a background thread, which is why it only fails once streaming
+        starts. Create a per-thread stream and make it the default so all of
+        this thread's generation work (warmup + loop) shares one stream.
+        """
+        try:
+            import mlx.core as mx
+
+            mx.set_default_stream(mx.new_thread_local_stream(mx.gpu))
+        except Exception:
+            # Non-MLX backends (or older MLX) don't need per-thread streams.
+            pass
+
     def _generate_loop(self) -> None:
+        self._ensure_thread_stream()
+        self.warmup_pulse()  # settle onto the pulse before any audio is heard
         while not self._stop.is_set():
             try:
                 chunk = self._generate_chunk()
@@ -229,7 +250,8 @@ class MagentaEngine:
         """Start the background generation thread and pre-buffer audio."""
         if self._embedding is None:
             raise RuntimeError("No style set. Call set_style() before start().")
-        self.warmup_pulse()  # settle onto the pulse before any audio is heard
+        # Warmup now runs inside the generation thread (on that thread's MLX
+        # stream); start() simply waits for the pre-buffer to fill below.
         self._gen_thread = threading.Thread(target=self._generate_loop, daemon=True)
         self._gen_thread.start()
         while (
