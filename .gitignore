@@ -216,3 +216,9 @@ __marimo__/
 
 # Streamlit
 .streamlit/secrets.toml
+
+# Generated audio samples
+*.wav
+
+# macOS
+.DS_Store

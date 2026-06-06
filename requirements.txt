@@ -1,0 +1,14 @@
+# AURALINK audio engine dependencies.
+# Apple Silicon required (MLX backend). Install into a Python 3.12 venv:
+#   uv venv --python 3.12 && source .venv/bin/activate
+#   uv pip install -r requirements.txt
+# Then download the model once:
+#   mrt models init
+#   mrt checkpoints download mrt2_small.safetensors
+magenta-rt[mlx]
+numpy
+sounddevice
+soundfile
+
+# Optional: only needed to read a real Arduino pulse sensor over serial.
+# pyserial
