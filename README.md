@@ -14,6 +14,9 @@ I am a student at Berklee College of Music with an Audio Engineering background 
 Will Daly
 Graduate Student in Artificial Intelligence at Northeastern University. Background in music production and yoga instruction.
 
+Dania Myers
+Self-taught frontend developer transitioning into full stack coding program. Background in Entrepreneurship.
+
 ## What's interesting about it?
 Instead of just generating music *for* someone, AURALINK turns empathy and physiology *into* the composition itself. It shifts the paradigm from passive streaming to organic, shared audio improvisation—giving a completely new meaning to "jamming" with someone.
 
