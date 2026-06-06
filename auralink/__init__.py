@@ -5,7 +5,6 @@ from .engine import SAMPLE_RATE, MagentaEngine
 from .heartbeat import (
     HeartbeatSource,
     PulsoidHeartbeat,
-    SerialHeartbeat,
     SimulatedHeartbeat,
 )
 
@@ -17,6 +16,5 @@ __all__ = [
     "MagentaEngine",
     "HeartbeatSource",
     "PulsoidHeartbeat",
-    "SerialHeartbeat",
     "SimulatedHeartbeat",
 ]

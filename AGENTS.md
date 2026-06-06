@@ -13,7 +13,7 @@ agents pushing to `main` at once, follow this Git workflow.
    git switch -c <type>/<short-description>
    ```
    Branch name format: `<type>/<short-description>`, where `<type>` is one of
-   `feat`, `fix`, `chore`, `docs`, or `refactor` (e.g. `feat/heartbeat-serial`,
+   `feat`, `fix`, `chore`, `docs`, or `refactor` (e.g. `feat/pulsoid-heartbeat`,
    `fix/audio-underrun`).
 
 2. Commit your work to that branch and push the branch (not `main`):
@@ -83,7 +83,7 @@ checklist in [HACKATHON.md](HACKATHON.md).
 
 Key files:
 - `auralink/engine.py` — `MagentaEngine`: MRT2 streaming, steerable via `set_style()`.
-- `auralink/heartbeat.py` — heart-rate sources (simulated for demos; Arduino serial stub).
+- `auralink/heartbeat.py` — heart-rate sources (simulated for demos; live Pulsoid).
 - `auralink/app.py` — orchestrator mapping heart rate → live Magenta style.
 
 ## Dev environment

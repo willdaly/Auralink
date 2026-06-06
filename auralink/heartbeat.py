@@ -3,7 +3,7 @@
 
 A heartbeat is the *controller* that plays Magenta RealTime 2. This module
 defines a small interface so the same orchestrator works with a simulated
-heartbeat today and a real Arduino pulse sensor later.
+heartbeat for demos and a live heart rate (Pulsoid) for real input.
 
 A source exposes one thing the rest of the app cares about: the current tempo in
 beats per minute (`bpm`), which the audio engine reads to schedule beats and to
@@ -32,10 +32,10 @@ class HeartbeatSource:
 
 
 class SimulatedHeartbeat(HeartbeatSource):
-    """A stand-in heart rate that gently drifts, for demos without hardware.
+    """A stand-in heart rate that gently drifts, for demos without a live feed.
 
     The BPM oscillates slowly around a resting value so you can hear AURALINK
-    respond (tempo + Magenta style changes) before the Arduino arrives. Set
+    respond (tempo + Magenta style changes) without a connected monitor. Set
     `drift=0` for a perfectly steady rate, or call `set_bpm()` to drive it
     manually (e.g. from a UI slider).
     """
@@ -65,60 +65,6 @@ class SimulatedHeartbeat(HeartbeatSource):
         """Pin the heart rate to a fixed value (overrides drift)."""
         with self._lock:
             self._manual = bpm
-
-
-class SerialHeartbeat(HeartbeatSource):
-    """Read beats from an Arduino pulse sensor over serial (future hardware).
-
-    The Arduino firmware should print one line per detected systolic peak (a
-    beat). We convert the interval between beats into an instantaneous BPM. This
-    is a stub wired for when the hardware arrives; it is not used by the demo
-    yet.
-    """
-
-    def __init__(self, port: str, baud: int = 115_200, smoothing: float = 0.3) -> None:
-        self._port = port
-        self._baud = baud
-        self._smoothing = smoothing
-        self._bpm = 60.0
-        self._last_beat: float | None = None
-        self._stop = threading.Event()
-        self._thread: threading.Thread | None = None
-        self._lock = threading.Lock()
-
-    @property
-    def bpm(self) -> float:
-        with self._lock:
-            return self._bpm
-
-    def start(self) -> None:
-        import serial  # pyserial; only needed for real hardware
-
-        self._serial = serial.Serial(self._port, self._baud, timeout=1.0)
-        self._thread = threading.Thread(target=self._read_loop, daemon=True)
-        self._thread.start()
-
-    def _read_loop(self) -> None:
-        while not self._stop.is_set():
-            line = self._serial.readline()
-            if not line:
-                continue
-            now = time.time()
-            if self._last_beat is not None:
-                interval = now - self._last_beat
-                if 0.25 < interval < 2.0:  # 30–240 BPM sanity window
-                    inst = 60.0 / interval
-                    with self._lock:
-                        self._bpm = (
-                            self._smoothing * inst
-                            + (1 - self._smoothing) * self._bpm
-                        )
-            self._last_beat = now
-
-    def stop(self) -> None:
-        self._stop.set()
-        if self._thread is not None:
-            self._thread.join(timeout=2.0)
 
 
 class PulsoidHeartbeat(HeartbeatSource):

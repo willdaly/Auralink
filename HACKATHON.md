@@ -59,9 +59,9 @@ The heartbeat is the *controller*; **Magenta RT2 is the instrument/sound engine.
   `mrt2_small` (real-time on this chip). This is the heartbeat of the demo.
 - **P0 — Control hook:** a `set_*()` API that retargets MRT2 live (style/prompt,
   tempo, drum/note conditioning) so an external signal can drive it.
-- **P1 — Biometric input:** Arduino heart-rate → BPM / onsets feeding the hook.
-  Until hardware arrives, drive the hook from a **simulated heartbeat** so the
-  whole pipeline is demoable today.
+- **P1 — Biometric input:** live heart rate via [Pulsoid](https://pulsoid.net/)
+  (e.g. an Apple Watch) → BPM feeding the hook. A **simulated heartbeat** drives
+  the whole pipeline when no monitor is connected, so it is always demoable.
 - **P1 — Musical mapping:** define how HR maps to MRT2 (tempo, intensity, prompt
   mood, drum density). Make it audibly responsive.
 - **P2 — Sound design polish & a kick that actually sounds good** (prompt tuning,
@@ -89,10 +89,10 @@ The heartbeat is the *controller*; **Magenta RT2 is the instrument/sound engine.
 - ✅ **On-challenge live instrument working.** `auralink/app.py` = heartbeat → MRT2
   style; Magenta generates ALL audio (kick included). **No samples.**
   - `auralink/engine.py` — MagentaEngine (live streaming + `set_style()` hook).
-  - `auralink/heartbeat.py` — SimulatedHeartbeat (demo) + SerialHeartbeat (Arduino stub).
+  - `auralink/heartbeat.py` — SimulatedHeartbeat (demo) + PulsoidHeartbeat (live).
   - Verified: `--selftest` real-time OK; `--render` produces valid Magenta audio.
-- ⏭ Next: tune kick prompt/temperature for punch; wire live heart rate (Pulsoid /
-  Arduino) for one user. Two-user counterpoint is a post-hackathon future goal.
+- ⏭ Next: tune kick prompt/temperature for punch; wire the live Pulsoid heart
+  rate for one user. Two-user counterpoint is a post-hackathon future goal.
 
 ## Logistics
 - **Sun 7 Jun, 4:00 PM** — team presentations. 3:00 PM doc/prep phase.

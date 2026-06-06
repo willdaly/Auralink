@@ -21,7 +21,7 @@ We want to create a working Minimum Viable Product (MVP) **for a single user**:
 I am a student at Berklee College of Music with an Audio Engineering background from SAE Institute. I bring the music theory, psychoacoustic concepts, audio signal flow, and the core vision for the adaptive composition templates (defining how parameters like HRV or pitch shift modulate harmonic extensions, filters, and dynamic ranges).
 
 **I am looking for hackers to join the team!** Especially:
-* **Hardware/Embedded Systems geeks** (Arduino, ESP32, or sensor hacking).
+* **Wearable/Biometric integration** (streaming live heart rate from an Apple Watch or other monitor via Pulsoid).
 * **Creative Coders** (Max/MSP, Pure Data, Python for DSP, or Ableton Live/Max for Live integration).
 * **UI/UX or Frontend developers** if we want to visually map the data in real-time.
 
@@ -37,11 +37,11 @@ A heartbeat plays Magenta RealTime 2 as a live instrument — **Magenta generate
 body (heartbeat)  ->  signal (BPM)  ->  Magenta RealTime 2  ->  sound
 ```
 
-The heart rate steers Magenta in real time: its heart-rate zone selects the live prompt (calm pads → steady 808 groove → driving techno → peak-time rave) and fills the tempo into the prompt, all re-embedded on the fly. Until the Arduino pulse sensor arrives, a simulated heartbeat drives the whole pipeline so it is demoable today.
+The heart rate steers Magenta in real time: its heart-rate zone selects the live prompt (calm pads → steady 808 groove → driving techno → peak-time rave) and fills the tempo into the prompt, all re-embedded on the fly. A live heart rate comes from [Pulsoid](https://pulsoid.net/) (e.g. an Apple Watch); a simulated heartbeat drives the whole pipeline when no monitor is connected, so it is always demoable.
 
 **Components**
 - [auralink/engine.py](auralink/engine.py) — `MagentaEngine`: MRT2 (`mrt2_small`) streaming continuously, steerable live via `set_style()`. This is the instrument.
-- [auralink/heartbeat.py](auralink/heartbeat.py) — `SimulatedHeartbeat` (demo) and `SerialHeartbeat` (Arduino, ready for hardware).
+- [auralink/heartbeat.py](auralink/heartbeat.py) — `SimulatedHeartbeat` (demo) and `PulsoidHeartbeat` (live heart rate via Pulsoid, e.g. an Apple Watch).
 - [auralink/app.py](auralink/app.py) — orchestrator mapping heart rate → Magenta style.
 
 **Requirements:** Apple Silicon Mac (`mrt2_small` streams in real time on an M1 Pro).

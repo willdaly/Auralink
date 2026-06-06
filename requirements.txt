@@ -10,9 +10,6 @@ numpy
 sounddevice
 soundfile
 
-# Optional: only needed to read a real Arduino pulse sensor over serial.
-# pyserial
-
 # Optional: only needed for a live Pulsoid heart rate (--pulsoid), e.g. an
 # Apple Watch. Requires a Pulsoid access token in the PULSOID_TOKEN env var.
 # websocket-client
