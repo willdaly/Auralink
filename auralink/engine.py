@@ -24,6 +24,66 @@ SAMPLE_RATE = 48_000  # MRT2 native output rate
 FRAMES_PER_SECOND = 25  # 25 generation frames == 1 second of audio
 
 
+class TempoConductor:
+    """Schedules a drum-onset pulse train at a live, settable BPM.
+
+    Magenta RT2 has no text "tempo" knob — but its drum conditioning is sampled
+    per frame at 25 fps (40 ms), which acts like a MIDI rhythm input. By placing
+    a drum onset (drums=[1]) only on the frames that land on a beat and silence
+    (drums=[0]) in between, the *spacing* of the onsets encodes the tempo, and
+    Magenta follows it. This conductor produces that per-frame onset signal and
+    tracks a global frame clock so the pulse stays continuous across chunks.
+
+    Thread-safe: the heart-rate poller calls set_bpm() while the generation
+    thread calls drum_for_next_frame().
+    """
+
+    def __init__(
+        self,
+        fps: int = FRAMES_PER_SECOND,
+        bpm: float = 60.0,
+        min_bpm: float = 20.0,
+        max_bpm: float = 240.0,
+    ) -> None:
+        self._fps = fps
+        self._min_bpm = min_bpm
+        self._max_bpm = max_bpm
+        self._lock = threading.Lock()
+        self._bpm = max(min_bpm, min(max_bpm, bpm))
+        self._frame = 0  # global frame counter
+        self._next_beat = 0.0  # frame index of the next onset (frame 0 is a beat)
+
+    def set_bpm(self, bpm: float) -> None:
+        with self._lock:
+            self._bpm = max(self._min_bpm, min(self._max_bpm, float(bpm)))
+
+    @property
+    def bpm(self) -> float:
+        with self._lock:
+            return self._bpm
+
+    def drum_for_next_frame(self) -> list[int]:
+        """Return [1] on a beat-onset frame else [0], then advance the clock.
+
+        Adapts immediately to BPM changes: the next onset is always at most one
+        (current-tempo) beat away, so speeding up never waits on a stale slow
+        interval.
+        """
+        with self._lock:
+            f = self._frame
+            frames_per_beat = self._fps * 60.0 / self._bpm
+            # If a tempo increase left the next beat too far out, pull it in.
+            if self._next_beat - f > frames_per_beat:
+                self._next_beat = f + frames_per_beat
+            if f >= self._next_beat:
+                drum = [1]
+                self._next_beat += frames_per_beat
+            else:
+                drum = [0]
+            self._frame = f + 1
+            return drum
+
+
 class MagentaEngine:
     """Continuously generates audio with Magenta RealTime 2, steerable live."""
 
@@ -35,6 +95,7 @@ class MagentaEngine:
         prebuffer_chunks: int = 2,
         temperature: float | None = None,
         play_drums: bool = True,
+        tempo_mode: str = "pulse",
     ) -> None:
         self.size = size
         self.bits = bits
@@ -42,11 +103,13 @@ class MagentaEngine:
         self.prebuffer_chunks = prebuffer_chunks
         self.temperature = temperature
         self.play_drums = play_drums
+        self.tempo_mode = tempo_mode  # "pulse" = tempo-locked drum onsets; "constant" = old always-on drums
 
         self._mrt = None
         self._embedding = None
         self._state = None
         self._style_label = ""
+        self._conductor = TempoConductor(fps=FRAMES_PER_SECOND)
 
         self._lock = threading.Lock()
         self._audio_q: "queue.Queue[np.ndarray]" = queue.Queue(maxsize=8)
@@ -79,13 +142,42 @@ class MagentaEngine:
     def style_label(self) -> str:
         return self._style_label
 
+    def set_bpm(self, bpm: float) -> None:
+        """Set the live tempo (beats per minute) of the drum pulse. Thread-safe."""
+        self._conductor.set_bpm(bpm)
+
+    @property
+    def bpm(self) -> float:
+        return self._conductor.bpm
+
     # -- Generation -------------------------------------------------------
 
     def _generate_chunk(self) -> np.ndarray:
-        """Generate one audio chunk, advancing the streaming state."""
+        """Generate one audio chunk, advancing the streaming state.
+
+        In "pulse" tempo mode the chunk is built frame-by-frame so the drum
+        onset for each frame comes from the conductor — the kick pulse tracks
+        the live BPM. In "constant" mode the whole chunk is generated in one
+        call with drums held on (the original behavior).
+        """
         with self._lock:
             embedding = self._embedding
             temperature = self.temperature
+
+        if self.tempo_mode == "pulse":
+            frames_out: list[np.ndarray] = []
+            for _ in range(self.chunk_frames):
+                drums = self._conductor.drum_for_next_frame() if self.play_drums else None
+                wav, self._state = self._mrt.generate(
+                    style=embedding,
+                    drums=drums,
+                    temperature=temperature,
+                    frames=1,
+                    state=self._state,
+                )
+                frames_out.append(np.asarray(wav.samples, dtype=np.float32))
+            return np.concatenate(frames_out, axis=0)
+
         drums = [1] if self.play_drums else None
         wav, self._state = self._mrt.generate(
             style=embedding,
@@ -174,3 +266,71 @@ class MagentaEngine:
                 f"({seconds:.2f}s) in {elapsed:.2f}s — RTF {rtf:.2f}x "
                 f"({'real-time OK' if rtf < 1 else 'too slow'})"
             )
+
+    # -- Phase 0 spike: tempo via a MIDI-like drum pulse ------------------
+
+    def render_pulse(
+        self,
+        bpm: float,
+        seconds: float,
+        *,
+        mode: str = "pulse",
+    ) -> np.ndarray:
+        """Offline de-risk spike: render audio with a drum pulse train at `bpm`.
+
+        Instead of leaning on a text "{bpm} BPM" word (which MRT2 does not lock
+        tempo to), this drives Magenta's drum conditioning *per frame* — the
+        model's MIDI-like rhythm input at 25 fps. A drum onset (drums=[1]) is
+        placed only on the frames that land on a beat; the spacing of those
+        onsets encodes the tempo for Magenta to follow.
+
+        Args:
+            bpm: Pulse rate (beats per minute) for the drum onsets.
+            seconds: Length of audio to render.
+            mode: "pulse" = onset on beat frames only; "constant" = drums on
+                every frame (the old behavior, for an A/B comparison).
+
+        Returns:
+            (N, 2) float32 audio. Requires a style set via set_style().
+        """
+        if self._mrt is None:
+            raise RuntimeError("Model not loaded. Call load_model() first.")
+        if self._embedding is None:
+            raise RuntimeError("No style set. Call set_style() before render_pulse().")
+
+        total_frames = int(round(seconds * FRAMES_PER_SECOND))
+        frames_per_beat = FRAMES_PER_SECOND * 60.0 / bpm
+
+        state = None
+        next_beat = 0.0  # frame index of the next beat onset (frame 0 is a beat)
+        beats = 0
+        chunks: list[np.ndarray] = []
+        t0 = time.time()
+        for f in range(total_frames):
+            if mode == "constant":
+                drums = [1]
+            else:
+                if f >= next_beat:
+                    drums = [1]
+                    next_beat += frames_per_beat
+                    beats += 1
+                else:
+                    drums = [0]
+            wav, state = self._mrt.generate(
+                style=self._embedding,
+                drums=drums,
+                temperature=self.temperature,
+                frames=1,
+                state=state,
+            )
+            chunks.append(np.asarray(wav.samples, dtype=np.float32))
+
+        audio = np.concatenate(chunks, axis=0)
+        elapsed = time.time() - t0
+        rtf = elapsed / seconds if seconds else float("inf")
+        print(
+            f"render_pulse: {mode} @ {bpm:.1f} BPM — {beats} onsets over "
+            f"{seconds:g}s, {frames_per_beat:.2f} frames/beat. "
+            f"Generated in {elapsed:.1f}s (RTF {rtf:.2f}x)."
+        )
+        return audio
