@@ -48,20 +48,26 @@ from .heartbeat import (
 # (non-rhythmic) ambient/cinematic texture, so the pulse is the only thing
 # marking time. Zones change mood/intensity, never speed. `{bpm}` is an aligned
 # hint only.
+#
+# Boundaries are calibrated to the demo subject's observed live range (~96-117
+# BPM on the Apple Watch): below that whole range collapsed into one "peak"
+# zone, so the mood never changed. These bands split that range so normal
+# variation crosses all four zones live, with headroom below (rest dips) and
+# above (excitement spikes). Re-tune per person if the demo subject differs.
 HR_ZONES = [
-    (0, 58, "calm",
+    (0, 98, "calm",
      "slow cinematic ambient, a single deep soft heartbeat pulse drum, "
      "warm sustained pads, gentle drone, sparse, lots of empty space, "
      "no hi-hats, no fast rhythm, no techno, calm and still, {bpm} BPM"),
-    (58, 72, "rest",
+    (98, 105, "rest",
      "calm cinematic ambient, one deep soft pulsing bass drum like a slow "
      "heartbeat, warm sustained strings, spacious, mellow, "
      "no hi-hats, no fast rhythm, no techno, restful, {bpm} BPM"),
-    (72, 88, "active",
+    (105, 112, "active",
      "warm cinematic ambient with gentle weight, a steady deep heartbeat "
      "pulse drum, soft sustained bass, swelling pads, spacious, "
      "no hi-hats, no fast rhythm, no techno, focused and calm, {bpm} BPM"),
-    (88, 999, "peak",
+    (112, 999, "peak",
      "intense cinematic ambient, a strong deep heartbeat pulse drum, "
      "dramatic swelling strings, warm sustained bass, powerful but unhurried, "
      "no hi-hats, no fast rhythm, no techno, emotional, {bpm} BPM"),
