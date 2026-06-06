@@ -44,10 +44,20 @@ RealTime 2** challenge: a heartbeat plays Magenta RealTime 2 as a live AI
 instrument. See [HACKATHON.md](HACKATHON.md) for the full charter and the
 anti-drift checklist, and [README.md](README.md) for how it works.
 
-**Core principle: Magenta RealTime 2 must stay the live instrument in the signal
-path.** Magenta generates all audio (including the kick) — do not replace it with
-samples or a synth. If a change makes the demo work without Magenta, it is
-off-challenge.
+## The challenge (stay oriented to this)
+
+- **Event:** Music Technology Hackathon, Boston, 6–7 June 2026 (Berklee).
+  <https://musichackspace.org/events/hackathon-boston-june-2026>
+- **Track:** Google DeepMind Challenge — *"Build and play your own live AI
+  instruments with Magenta RealTime 2."* ($2,000 prize.)
+- **Judged on:** creativity, technical execution, and real-world product potential.
+- **Hard requirement:** **Magenta RealTime 2 must be the live instrument in the
+  signal path.** Magenta generates all audio (including the kick) — do not
+  replace it with samples or a synth. If a change makes the demo work *without*
+  Magenta, it is off-challenge: stop and reconsider.
+
+Before a non-trivial change, sanity-check it against this and the anti-drift
+checklist in [HACKATHON.md](HACKATHON.md).
 
 Key files:
 - `magenta_engine.py` — `MagentaEngine`: MRT2 streaming, steerable via `set_style()`.
