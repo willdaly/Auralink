@@ -40,9 +40,9 @@ body (heartbeat)  ->  signal (BPM)  ->  Magenta RealTime 2  ->  sound
 The heart rate steers Magenta in real time: its heart-rate zone selects the live prompt (calm pads → steady 808 groove → driving techno → peak-time rave) and fills the tempo into the prompt, all re-embedded on the fly. Until the Arduino pulse sensor arrives, a simulated heartbeat drives the whole pipeline so it is demoable today.
 
 **Components**
-- [magenta_engine.py](magenta_engine.py) — `MagentaEngine`: MRT2 (`mrt2_small`) streaming continuously, steerable live via `set_style()`. This is the instrument.
-- [heartbeat.py](heartbeat.py) — `SimulatedHeartbeat` (demo) and `SerialHeartbeat` (Arduino, ready for hardware).
-- [auralink.py](auralink.py) — orchestrator mapping heart rate → Magenta style.
+- [auralink/engine.py](auralink/engine.py) — `MagentaEngine`: MRT2 (`mrt2_small`) streaming continuously, steerable live via `set_style()`. This is the instrument.
+- [auralink/heartbeat.py](auralink/heartbeat.py) — `SimulatedHeartbeat` (demo) and `SerialHeartbeat` (Arduino, ready for hardware).
+- [auralink/app.py](auralink/app.py) — orchestrator mapping heart rate → Magenta style.
 
 **Requirements:** Apple Silicon Mac (`mrt2_small` streams in real time on an M1 Pro).
 
@@ -63,14 +63,14 @@ mrt checkpoints download mrt2_small.safetensors
 **Run:**
 ```bash
 # Play live: simulated heartbeat -> Magenta (Ctrl-C to stop)
-python auralink.py
-python auralink.py --bpm 80 --steady     # pin a fixed heart rate
+python -m auralink
+python -m auralink --bpm 80 --steady     # pin a fixed heart rate
 
 # Render to a WAV instead of playing live (no audio device needed)
-python auralink.py --render 12 --bpm 90
+python -m auralink --render 12 --bpm 90
 
 # Quick model + real-time check
-python auralink.py --selftest
+python -m auralink --selftest
 ```
 
 `MagentaEngine.set_style()` is the live-control hook; the heartbeat calls it to retune Magenta from a real pulse in real time. See [HACKATHON.md](HACKATHON.md) for the challenge charter.

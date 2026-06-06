@@ -78,7 +78,7 @@ The heartbeat is the *controller*; **Magenta RT2 is the instrument/sound engine.
 ## Sound-quality notes for MRT2 (the earlier kick sounded bad — fixable in Magenta)
 - NO SAMPLES. Magenta generates the kick and everything else.
 - Prompt richer than "kick drum": e.g. *"punchy four-on-the-floor techno kick,
-  tight, driving, deep sub"* (see HR_ZONES in auralink.py).
+  tight, driving, deep sub"* (see HR_ZONES in auralink/app.py).
 - Lower `temperature` (~1.0) for a steadier kick; `drums=[1]` conditioning is on.
 - Generate a full groove (kick + bass + texture), not an isolated transient.
 
@@ -86,10 +86,10 @@ The heartbeat is the *controller*; **Magenta RT2 is the instrument/sound engine.
 - ✅ Env ready: `.venv` (py3.12), `magenta-rt[mlx]` installed, `mrt2_small`
   checkpoint + shared resources downloaded. MRT2 generates at ~0.78× real-time
   factor on the M1 Pro (keeps ahead of playback).
-- ✅ **On-challenge live instrument working.** `auralink.py` = heartbeat → MRT2
+- ✅ **On-challenge live instrument working.** `auralink/app.py` = heartbeat → MRT2
   style; Magenta generates ALL audio (kick included). **No samples.**
-  - `magenta_engine.py` — MagentaEngine (live streaming + `set_style()` hook).
-  - `heartbeat.py` — SimulatedHeartbeat (demo) + SerialHeartbeat (Arduino stub).
+  - `auralink/engine.py` — MagentaEngine (live streaming + `set_style()` hook).
+  - `auralink/heartbeat.py` — SimulatedHeartbeat (demo) + SerialHeartbeat (Arduino stub).
   - Verified: `--selftest` real-time OK; `--render` produces valid Magenta audio.
 - ⏭ Next: tune kick prompt/temperature for punch; wire live heart rate (Pulsoid /
   Arduino) for one user. Two-user counterpoint is a post-hackathon future goal.

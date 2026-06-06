@@ -54,7 +54,7 @@ agents pushing to `main` at once, follow this Git workflow.
   rejected, `git pull` and integrate — never `git push --force` to fix it.
 - **Don't reformat or refactor unrelated code.** Sweeping changes create noisy
   diffs and conflicts; keep each branch scoped to its stated purpose.
-- **Coordinate before large or shared-file changes** (e.g. `auralink.py`,
+- **Coordinate before large or shared-file changes** (e.g. `auralink/app.py`,
   `requirements.txt`, this file) so two people don't rewrite the same thing.
 - **Leave the workspace clean.** Don't commit local experiments, scratch files,
   or rendered audio; they belong in `.gitignore`.
@@ -82,9 +82,9 @@ Before a non-trivial change, sanity-check it against this and the anti-drift
 checklist in [HACKATHON.md](HACKATHON.md).
 
 Key files:
-- `magenta_engine.py` — `MagentaEngine`: MRT2 streaming, steerable via `set_style()`.
-- `heartbeat.py` — heart-rate sources (simulated for demos; Arduino serial stub).
-- `auralink.py` — orchestrator mapping heart rate → live Magenta style.
+- `auralink/engine.py` — `MagentaEngine`: MRT2 streaming, steerable via `set_style()`.
+- `auralink/heartbeat.py` — heart-rate sources (simulated for demos; Arduino serial stub).
+- `auralink/app.py` — orchestrator mapping heart rate → live Magenta style.
 
 ## Dev environment
 
@@ -101,8 +101,8 @@ mrt checkpoints download mrt2_small.safetensors
 Verify changes without an audio device before committing:
 
 ```bash
-python auralink.py --selftest        # model loads + real-time check
-python auralink.py --render 8        # render a WAV offline
+python -m auralink --selftest        # model loads + real-time check
+python -m auralink --render 8        # render a WAV offline
 ```
 
 ## Conventions

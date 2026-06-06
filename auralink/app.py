@@ -13,14 +13,14 @@ selecting the live style/prompt for its heart-rate zone (calm pads -> steady
 the prompt, all re-embedded on the fly via MagentaEngine.set_style().
 
 Run live:
-    python auralink.py                  # simulated heartbeat ~60 BPM
-    python auralink.py --bpm 80 --steady
+    python -m auralink                  # simulated heartbeat ~60 BPM
+    python -m auralink --bpm 80 --steady
 
 Offline (no audio device; writes a WAV to verify the pipeline):
-    python auralink.py --render 12 --bpm 90
+    python -m auralink --render 12 --bpm 90
 
 Quick model check:
-    python auralink.py --selftest
+    python -m auralink --selftest
 """
 
 from __future__ import annotations
@@ -30,8 +30,8 @@ import time
 
 import numpy as np
 
-from heartbeat import HeartbeatSource, PulsoidHeartbeat, SimulatedHeartbeat
-from magenta_engine import SAMPLE_RATE, MagentaEngine
+from .engine import SAMPLE_RATE, MagentaEngine
+from .heartbeat import HeartbeatSource, PulsoidHeartbeat, SimulatedHeartbeat
 
 # Heart-rate zones -> live Magenta style. The prompt is the entire instrument;
 # Magenta generates the kick and everything else. A `{bpm}` token is filled with
@@ -148,7 +148,7 @@ class Auralink:
 
 
 def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
-    parser = argparse.ArgumentParser(description=__doc__)
+    parser = argparse.ArgumentParser(prog="auralink", description=__doc__)
     parser.add_argument("--bpm", type=float, default=60.0, help="Base heart rate (BPM).")
     parser.add_argument(
         "--steady", action="store_true", help="Pin a fixed heart rate (no drift)."
@@ -218,7 +218,3 @@ def main(argv: list[str] | None = None) -> int:
     else:
         app.run()
     return 0
-
-
-if __name__ == "__main__":
-    raise SystemExit(main())

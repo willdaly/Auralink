@@ -8,7 +8,7 @@ sampling controls). An external controller (a heartbeat) calls those hooks.
 
 The model is MRT2 `mrt2_small`, which streams in real time on an M1 Pro. Audio
 is generated in a background thread and consumed block-by-block by whoever owns
-the output stream (see auralink.py), so the engine can be mixed with other
+the output stream (see app.py), so the engine can be mixed with other
 layers.
 """
 
