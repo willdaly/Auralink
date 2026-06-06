@@ -7,13 +7,15 @@
 ## What does it do?
 AURALINK is an adaptive bio-music framework designed to break the static relationship between listeners and music. By capturing real-time biometrics (heart rate, respiration) and vocal inputs, the system treats the human body as a digital musical instrument (DMI). 
 
-Its core innovation is **Interpersonal Bio-Feedback**: when two users sync their Aura Links, the system dynamically generates musical structures based on their physiological relationship. If their heart rates align, the harmony resolves; if they differ, the system creates complex polyrhythms and syncopations (e.g., one heart triggers the kick drum, the other dictates the subdivision). It acts as a shared biological canvas for wellness, performance, and human connection.
+Its long-term core innovation is **Interpersonal Bio-Feedback**: when two users sync their Aura Links, the system dynamically generates musical structures based on their physiological relationship. If their heart rates align, the harmony resolves; if they differ, the system creates complex polyrhythms and syncopations (e.g., one heart triggers the kick drum, the other dictates the subdivision). It acts as a shared biological canvas for wellness, performance, and human connection. **For this hackathon we are focused on a single user**; the two-user interpersonal mode is a future goal for development after the event.
 
 ## What we plan to build during this Hackathon:
-We want to create a working Minimum Viable Product (MVP):
+We want to create a working Minimum Viable Product (MVP) **for a single user**:
 1. **Low-Latency Hardware:** A sensor setup that captures cardiac peaks (systole) with minimal delay.
 2. **Audio Engine Bridge:** A Max/MSP (or Pure Data/Ableton Live) patch that translates biometric triggers into MIDI parameters (e.g., your heartbeat triggers a TR-808 kick drum in real-time).
-3. **Dual-User Framework:** A basic interactive template where two distinct pulses can generate counterpoint, syncopation, and cross-modulations.
+
+### Future goal (post-hackathon)
+- **Dual-User Framework:** A basic interactive template where two distinct pulses can generate counterpoint, syncopation, and cross-modulations. This is a future goal for after the hackathon, not part of the MVP.
 
 ## Who I am & Who I'm looking for:
 I am a student at Berklee College of Music with an Audio Engineering background from SAE Institute. I bring the music theory, psychoacoustic concepts, audio signal flow, and the core vision for the adaptive composition templates (defining how parameters like HRV or pitch shift modulate harmonic extensions, filters, and dynamic ranges).
