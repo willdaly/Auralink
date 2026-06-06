@@ -37,6 +37,28 @@ agents pushing to `main` at once, follow this Git workflow.
 - Do not delete or force-overwrite work you don't recognise — it may be a
   teammate's in-progress changes. Ask first.
 
+## Collaboration etiquette
+
+- **Keep `main` demo-ready.** It is what the team presents from — never leave it
+  broken. If a branch isn't working yet, keep it on the branch.
+- **Stay on your own branch.** Don't commit to, rebase, or force-push a branch
+  someone else is using. Only the branch author rewrites its history.
+- **Push small and often.** Frequent, focused commits with clear messages make
+  work-in-progress visible and reduce conflicts. Avoid giant, mixed commits.
+- **No secrets in the repo.** Never commit API keys, tokens (e.g. a Hugging Face
+  `HF_TOKEN`), or credentials. Use environment variables; add new ignore rules
+  if needed.
+- **Flag dependency changes.** If you add or bump a package, update
+  `requirements.txt` and call it out so teammates re-run `uv pip install`.
+- **Resolve conflicts by pulling/merging, not forcing.** When a push is
+  rejected, `git pull` and integrate — never `git push --force` to fix it.
+- **Don't reformat or refactor unrelated code.** Sweeping changes create noisy
+  diffs and conflicts; keep each branch scoped to its stated purpose.
+- **Coordinate before large or shared-file changes** (e.g. `auralink.py`,
+  `requirements.txt`, this file) so two people don't rewrite the same thing.
+- **Leave the workspace clean.** Don't commit local experiments, scratch files,
+  or rendered audio; they belong in `.gitignore`.
+
 ## Project overview
 
 AURALINK is a bio-music instrument built for the **Google DeepMind / Magenta
