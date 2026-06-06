@@ -39,26 +39,32 @@ from .heartbeat import (
     check_pulsoid,
 )
 
-# Heart-rate zones -> live Magenta style. The prompt sets the genre/energy of the
-# instrument; Magenta generates the kick and everything else. The *tempo* no
-# longer comes from the text — it is driven by a per-frame drum pulse at the
-# heart rate (see MagentaEngine.set_bpm). So these prompts are kept kick-forward
-# and deliberately avoid prescribing their own fast rhythmic elements (busy
-# arps, rolling 16th basslines) that would compete with the heartbeat pulse.
-# The `{bpm}` token is still filled in as a gentle, aligned hint.
+# Heart-rate zones -> live Magenta style. The *tempo* is driven by a per-frame
+# drum pulse at the heart rate (see MagentaEngine.set_bpm), so the prompt must
+# NOT set a tempo or a dance genre: at a 60-110 heart rate, techno (four-on-the-
+# floor, hi-hats, arps) makes the model add fast subdivisions that fight the
+# pulse and sound too fast. Instead the heartbeat IS the instrument — every zone
+# centers a single deep, soft pulse drum and surrounds it with *sustained*
+# (non-rhythmic) ambient/cinematic texture, so the pulse is the only thing
+# marking time. Zones change mood/intensity, never speed. `{bpm}` is an aligned
+# hint only.
 HR_ZONES = [
     (0, 58, "calm",
-     "calm ambient soundscape, warm evolving pads, slow deep drone, "
-     "soft four on the floor TR-808 kick, lots of space, meditative, {bpm} BPM"),
+     "slow cinematic ambient, a single deep soft heartbeat pulse drum, "
+     "warm sustained pads, gentle drone, sparse, lots of empty space, "
+     "no hi-hats, no fast rhythm, no techno, calm and still, {bpm} BPM"),
     (58, 72, "rest",
-     "deep dub techno, prominent TR-808 sub kick four on the floor, "
-     "warm sustained chords, spacious, hypnotic, sparse, {bpm} BPM"),
+     "calm cinematic ambient, one deep soft pulsing bass drum like a slow "
+     "heartbeat, warm sustained strings, spacious, mellow, "
+     "no hi-hats, no fast rhythm, no techno, restful, {bpm} BPM"),
     (72, 88, "active",
-     "driving four on the floor techno, punchy prominent TR-808 kick drum, "
-     "deep sustained bass, hypnotic, focused, {bpm} BPM"),
+     "warm cinematic ambient with gentle weight, a steady deep heartbeat "
+     "pulse drum, soft sustained bass, swelling pads, spacious, "
+     "no hi-hats, no fast rhythm, no techno, focused and calm, {bpm} BPM"),
     (88, 999, "peak",
-     "energetic peak-time techno, hard pumping TR-808 kick four on the floor, "
-     "powerful driving bass, euphoric rave energy, {bpm} BPM"),
+     "intense cinematic ambient, a strong deep heartbeat pulse drum, "
+     "dramatic swelling strings, warm sustained bass, powerful but unhurried, "
+     "no hi-hats, no fast rhythm, no techno, emotional, {bpm} BPM"),
 ]
 
 
@@ -170,8 +176,15 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     parser.add_argument(
         "--temperature",
         type=float,
-        default=1.0,
-        help="Magenta sampling temperature. Lower = steadier kick (default 1.0).",
+        default=0.9,
+        help="Magenta sampling temperature. Lower = steadier kick (default 0.9).",
+    )
+    parser.add_argument(
+        "--cfg-drums",
+        type=float,
+        default=6.0,
+        help="Drum-pulse authority (classifier-free guidance). Higher = the kick "
+        "locks to the heart-rate pulse more strongly over the style (default 6.0).",
     )
     parser.add_argument(
         "--tempo-mode",
@@ -248,7 +261,10 @@ def main(argv: list[str] | None = None) -> int:
         return check_pulsoid(token=args.pulsoid_token)
 
     engine = MagentaEngine(
-        size=args.size, temperature=args.temperature, tempo_mode=args.tempo_mode
+        size=args.size,
+        temperature=args.temperature,
+        tempo_mode=args.tempo_mode,
+        cfg_drums=args.cfg_drums,
     )
     engine.load_model()
 
