@@ -73,5 +73,22 @@ python -m auralink --render 12 --bpm 90
 python -m auralink --selftest
 ```
 
+**Live heart rate (Pulsoid):**
+Stream your heart rate from an Apple Watch (or any monitor) via
+[Pulsoid](https://pulsoid.net/).
+```bash
+# 1. Create a Manual Token at https://pulsoid.net/ui/keys
+#    with the data:heart_rate:read scope.
+# 2. Put it in a local .env (gitignored):
+cp .env.example .env        # then edit .env and set PULSOID_TOKEN=...
+
+# 3. Verify the feed without loading Magenta (start your watch streaming first):
+python -m auralink --pulsoid-check
+
+# 4. Play live from your heartbeat:
+python -m auralink --pulsoid
+```
+
+
 `MagentaEngine.set_style()` is the live-control hook; the heartbeat calls it to retune Magenta from a real pulse in real time. See [HACKATHON.md](HACKATHON.md) for the challenge charter.
 

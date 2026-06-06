@@ -166,3 +166,68 @@ class PulsoidHeartbeat(HeartbeatSource):
         self._close_ws()
         if self._thread is not None:
             self._thread.join(timeout=2.0)
+
+
+def check_pulsoid(token: str | None = None, seconds: float = 20.0,
+                  url: str | None = None) -> int:
+    """Print live Pulsoid messages for a few seconds to verify the feed.
+
+    A lightweight diagnostic that confirms the token, endpoint, and watch are
+    streaming, without loading Magenta. Prints each raw frame and the BPM we
+    parse from it. Returns 0 if at least one heart rate was received, else 1, so
+    it can be used as a CLI exit code.
+    """
+    import json
+    import os
+    import time
+
+    import websocket  # websocket-client
+
+    token = token or os.environ.get("PULSOID_TOKEN")
+    if not token:
+        print("No Pulsoid token. Set PULSOID_TOKEN (see .env.example) or pass "
+              "--pulsoid-token.")
+        return 1
+
+    endpoint = url or PulsoidHeartbeat.DEFAULT_URL
+    print(f"Connecting to Pulsoid ({endpoint}) for {seconds:g}s...")
+    try:
+        ws = websocket.create_connection(f"{endpoint}?access_token={token}",
+                                         timeout=10)
+    except Exception as exc:  # noqa: BLE001
+        print(f"Could not connect: {exc}")
+        print("Check the token/scope (data:heart_rate:read) and your network.")
+        return 1
+
+    received = 0
+    deadline = time.time() + seconds
+    try:
+        ws.settimeout(seconds)
+        while time.time() < deadline:
+            try:
+                raw = ws.recv()
+            except Exception:  # noqa: BLE001 - timeout/closed
+                break
+            if not raw:
+                continue
+            print(f"  raw: {raw}")
+            try:
+                bpm = float(json.loads(raw)["data"]["heart_rate"])
+                received += 1
+                print(f"  -> parsed BPM: {bpm:.0f}")
+            except (ValueError, KeyError, TypeError):
+                print("  -> could not parse heart_rate from this message "
+                      "(the JSON shape may differ; share this line).")
+    finally:
+        try:
+            ws.close()
+        except Exception:  # noqa: BLE001
+            pass
+
+    if received:
+        print(f"OK: received {received} heart-rate message(s). Pulsoid is working.")
+        return 0
+    print("No heart-rate messages received. Is the watch streaming to Pulsoid, "
+          "and is the token correct?")
+    return 1
+

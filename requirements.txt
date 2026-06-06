@@ -10,9 +10,9 @@ numpy
 sounddevice
 soundfile
 
-# Optional: only needed for a live Pulsoid heart rate (--pulsoid), e.g. an
-# Apple Watch. Requires a Pulsoid access token in the PULSOID_TOKEN env var.
-# websocket-client
+# Live Pulsoid heart rate (--pulsoid), e.g. an Apple Watch. Reads a Pulsoid
+# access token from the PULSOID_TOKEN env var (see .env.example).
+websocket-client
 
 # Auto-loads a local .env file (e.g. PULSOID_TOKEN) at startup. See .env.example.
 python-dotenv

@@ -31,7 +31,12 @@ import time
 import numpy as np
 
 from .engine import SAMPLE_RATE, MagentaEngine
-from .heartbeat import HeartbeatSource, PulsoidHeartbeat, SimulatedHeartbeat
+from .heartbeat import (
+    HeartbeatSource,
+    PulsoidHeartbeat,
+    SimulatedHeartbeat,
+    check_pulsoid,
+)
 
 # Heart-rate zones -> live Magenta style. The prompt is the entire instrument;
 # Magenta generates the kick and everything else. A `{bpm}` token is filled with
@@ -184,6 +189,12 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
         help="Pulsoid access token. Defaults to the PULSOID_TOKEN env var. "
         "Keep it secret; never commit it.",
     )
+    parser.add_argument(
+        "--pulsoid-check",
+        action="store_true",
+        help="Connect to Pulsoid and print live heart-rate messages for a few "
+        "seconds, then exit. Verifies the token/watch without loading Magenta.",
+    )
     return parser.parse_args(argv)
 
 
@@ -198,6 +209,10 @@ def main(argv: list[str] | None = None) -> int:
         load_dotenv()
     except ImportError:
         pass
+
+    # Quick Pulsoid connectivity check — no Magenta model needed.
+    if args.pulsoid_check:
+        return check_pulsoid(token=args.pulsoid_token)
 
     engine = MagentaEngine(size=args.size, temperature=args.temperature)
     engine.load_model()
