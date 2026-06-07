@@ -1,17 +1,4 @@
 #!/usr/bin/env python3
-"""MagentaEngine — Magenta RealTime 2 as a live, controllable instrument.
-
-This is the heart of AURALINK and what keeps the project on-challenge for the
-Google DeepMind / Magenta RealTime 2 track: MRT2 generates audio continuously in
-real time, and its sound can be steered live through `set_style()` (and the
-sampling controls). An external controller (a heartbeat) calls those hooks.
-
-The model is MRT2 `mrt2_small`, which streams in real time on an M1 Pro. Audio
-is generated in a background thread and consumed block-by-block by whoever owns
-the output stream (see app.py), so the engine can be mixed with other
-layers.
-"""
-
 from __future__ import annotations
 
 import queue
