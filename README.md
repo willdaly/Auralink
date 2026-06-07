@@ -1,5 +1,5 @@
 #Auralink
-## An adaptive bio-music instrument that translates interpersonal biometrics into generative, synchronized musical structures.
+## An adaptive bio-music instrument that translates heartbeats into generative, synchronized musical structures.
 
 > **Built for the Music Technology Hackathon — Boston, 6–7 June 2026** for the **Google DeepMind Challenge: _Build and play your own live AI instruments with [Magenta RealTime 2](https://github.com/magenta/magenta-realtime)._**
 > Magenta RealTime 2 is the live AI instrument at the core of AURALINK; a person's heartbeat plays it in real time.
@@ -8,14 +8,17 @@
 AURALINK is an adaptive bio-music framework designed to break the static relationship between listeners and music. By capturing real-time biometrics (heart rate), the system treats the human body as a digital musical instrument (DMI). 
 
 ## Contributors:
-Javier Roqueni
+-Javier Roqueni
 I am a student at Berklee College of Music with an Audio Engineering background from SAE Institute. I bring the music theory, psychoacoustic concepts, audio signal flow, and the core vision for the adaptive composition templates (defining how parameters like HRV or pitch shift modulate harmonic extensions, filters, and dynamic ranges).
 
-Will Daly
+-Will Daly
 Graduate Student in Artificial Intelligence at Northeastern University. Background in music production and yoga instruction.
 
-Dania Myers
+-Dania Myers
 Self-taught frontend developer transitioning into full stack coding program. Background in Entrepreneurship.
+
+-Linh Le
+Computer science student, full stack development, web and app dev, visual artist, florist
 
 ## What's interesting about it?
 Instead of just generating music *for* someone, AURALINK turns empathy and physiology *into* the composition itself. It shifts the paradigm from passive streaming to organic, shared audio improvisation—giving a completely new meaning to "jamming" with someone.
@@ -82,5 +85,5 @@ python -m auralink --pulsoid
 ```
 
 
-`MagentaEngine.set_style()` is the live-control hook; the heartbeat calls it to retune Magenta from a real pulse in real time. See [HACKATHON.md](HACKATHON.md) for the challenge charter.
+`MagentaEngine.set_style()` is the live-control hook; the heartbeat calls it to retune Magenta from a real pulse in real time.
 
