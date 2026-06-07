@@ -68,8 +68,6 @@ function applyState(s) {
     else sourceBadge.classList.add("source-unknown");
   }
 
-  setText("artName", z.name);
-  setText("artMeta", z.meta);
   setText("pulseMode", z.mode);
   setText("cnChord", z.chord);
   setText("cnGroove", z.groove);
