@@ -82,7 +82,6 @@ class MagentaEngine:
         prebuffer_chunks: int = 2,
         temperature: float | None = None,
         play_drums: bool = True,
-        tempo_mode: str = "pulse",
         cfg_drums: float = 4.0,
     ) -> None:
         self.size = size
@@ -91,7 +90,6 @@ class MagentaEngine:
         self.prebuffer_chunks = prebuffer_chunks
         self.temperature = temperature
         self.play_drums = play_drums
-        self.tempo_mode = tempo_mode  # "pulse" = tempo-locked drum onsets; "constant" = old always-on drums
         # Classifier-free-guidance strength for the drum conditioning. Higher =
         # the drum pulse is more authoritative, so an energetic style prompt
         # can't override the heart-rate tempo. MRT2 default is 1.0 (a weak hint).
@@ -147,40 +145,26 @@ class MagentaEngine:
     def _generate_chunk(self) -> np.ndarray:
         """Generate one audio chunk, advancing the streaming state.
 
-        In "pulse" tempo mode the chunk is built frame-by-frame so the drum
-        onset for each frame comes from the conductor — the kick pulse tracks
-        the live BPM. In "constant" mode the whole chunk is generated in one
-        call with drums held on (the original behavior).
+        The chunk is built frame-by-frame so the drum onset for each frame
+        comes from the conductor — the kick pulse tracks the live BPM.
         """
         with self._lock:
             embedding = self._embedding
             temperature = self.temperature
 
-        if self.tempo_mode == "pulse":
-            frames_out: list[np.ndarray] = []
-            for _ in range(self.chunk_frames):
-                drums = self._conductor.drum_for_next_frame() if self.play_drums else None
-                wav, self._state = self._mrt.generate(
-                    style=embedding,
-                    drums=drums,
-                    cfg_drums=self.cfg_drums,
-                    temperature=temperature,
-                    frames=1,
-                    state=self._state,
-                )
-                frames_out.append(np.asarray(wav.samples, dtype=np.float32))
-            return np.concatenate(frames_out, axis=0)
-
-        drums = [1] if self.play_drums else None
-        wav, self._state = self._mrt.generate(
-            style=embedding,
-            drums=drums,
-            cfg_drums=self.cfg_drums,
-            temperature=temperature,
-            frames=self.chunk_frames,
-            state=self._state,
-        )
-        return np.asarray(wav.samples, dtype=np.float32)
+        frames_out: list[np.ndarray] = []
+        for _ in range(self.chunk_frames):
+            drums = self._conductor.drum_for_next_frame() if self.play_drums else None
+            wav, self._state = self._mrt.generate(
+                style=embedding,
+                drums=drums,
+                cfg_drums=self.cfg_drums,
+                temperature=temperature,
+                frames=1,
+                state=self._state,
+            )
+            frames_out.append(np.asarray(wav.samples, dtype=np.float32))
+        return np.concatenate(frames_out, axis=0)
 
     @staticmethod
     def _ensure_thread_stream() -> None:
@@ -305,8 +289,6 @@ class MagentaEngine:
         self,
         bpm: float,
         seconds: float,
-        *,
-        mode: str = "pulse",
     ) -> np.ndarray:
         """Offline de-risk spike: render audio with a drum pulse train at `bpm`.
 
@@ -319,8 +301,6 @@ class MagentaEngine:
         Args:
             bpm: Pulse rate (beats per minute) for the drum onsets.
             seconds: Length of audio to render.
-            mode: "pulse" = onset on beat frames only; "constant" = drums on
-                every frame (the old behavior, for an A/B comparison).
 
         Returns:
             (N, 2) float32 audio. Requires a style set via set_style().
@@ -339,15 +319,12 @@ class MagentaEngine:
         chunks: list[np.ndarray] = []
         t0 = time.time()
         for f in range(total_frames):
-            if mode == "constant":
+            if f >= next_beat:
                 drums = [1]
+                next_beat += frames_per_beat
+                beats += 1
             else:
-                if f >= next_beat:
-                    drums = [1]
-                    next_beat += frames_per_beat
-                    beats += 1
-                else:
-                    drums = [0]
+                drums = [0]
             wav, state = self._mrt.generate(
                 style=self._embedding,
                 drums=drums,
@@ -362,7 +339,7 @@ class MagentaEngine:
         elapsed = time.time() - t0
         rtf = elapsed / seconds if seconds else float("inf")
         print(
-            f"render_pulse: {mode} @ {bpm:.1f} BPM — {beats} onsets over "
+            f"render_pulse: pulse @ {bpm:.1f} BPM — {beats} onsets over "
             f"{seconds:g}s, {frames_per_beat:.2f} frames/beat. "
             f"Generated in {elapsed:.1f}s (RTF {rtf:.2f}x)."
         )
