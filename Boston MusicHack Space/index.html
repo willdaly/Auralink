@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AURALINK — Player</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,200;0,9..40,300;0,9..40,400;0,9..40,500;1,9..40,300&family=DM+Mono:wght@300;400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+    <div class="shell">
+ 
+  <!-- Logo -->
+  <div class="card card-logo">
+    <div class="logo">AURA<span class="logo-accent">·</span>LINK</div>
+    <div class="live-badge"><div class="live-dot"></div><div class="live-txt">BIO LIVE</div></div>
+  </div>
+ 
+  <!-- Heartbeat strip -->
+  <div class="card card-heartbeat">
+    <div class="hb-label">CARDIAC RHYTHM</div>
+    <div class="hb-canvas-wrap"><canvas class="hb-canvas" id="hbCanvas"></canvas></div>
+    <div class="hb-bpm">
+      <div class="hb-num" id="bpmNum">72</div>
+      <div class="hb-unit">BPM</div>
+    </div>
+  </div>
+ 
+  <!-- Player -->
+  <div class="card card-player">
+    <div class="now-lbl">NOW PLAYING</div>
+    <div class="art-wrap">
+      <canvas class="art-canvas" id="artCanvas"></canvas>
+      <div class="art-overlay"></div>
+      <div class="art-track-info">
+        <div class="art-name" id="artName">Morning Threshold</div>
+        <div class="art-meta" id="artMeta">Generative · 128 BPM · C minor</div>
+      </div>
+    </div>
+ 
+    <div class="prog-track">
+      <div class="prog-fill" id="progFill" style="width:35%"></div>
+    </div>
+    <div class="prog-times"><span id="tElapsed">1:24</span><span id="tTotal">3:48</span></div>
+ 
+    <div class="controls">
+      <button class="ctrl" onclick="prevTrack()">
+        <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M3 3v10M13 3L7 8l6 5V3z" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </button>
+      <button class="ctrl" onclick="seekBack()">
+        <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M3 8a5 5 0 1 0 5-5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/><path d="M3 5V8h3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </button>
+      <button class="ctrl-play" id="playBtn" onclick="togglePlay()">
+        <svg id="playIcon" width="20" height="20" viewBox="0 0 20 20" fill="none"><path d="M7 4.5l10 5.5-10 5.5V4.5z" fill="white"/></svg>
+      </button>
+      <button class="ctrl" onclick="seekFwd()">
+        <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M13 8a5 5 0 1 1-5-5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/><path d="M13 5V8h-3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </button>
+      <button class="ctrl" onclick="nextTrack()">
+        <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M13 3v10M3 3l6 5-6 5V3z" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </button>
+    </div>
+ 
+    <div class="vol-row">
+      <svg class="vol-icon" width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M2 5h2l3-3v10L4 9H2V5z" stroke="currentColor" stroke-width="1.2" stroke-linejoin="round"/><path d="M10 4a4 4 0 0 1 0 6" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/></svg>
+      <input type="range" min="0" max="100" value="72">
+    </div>
+ 
+    <div class="bio-row">
+      <div>
+        <div class="bio-lbl">Adaptive playback</div>
+        <div class="bio-sub">Music follows your heartbeat</div>
+      </div>
+      <button class="toggle on" id="bioToggle" onclick="toggleBio()"></button>
+    </div>
+  </div>
+ 
+  <!-- Pulse visualiser -->
+  <div class="card card-pulse">
+    <div class="pulse-header">
+      <div class="pulse-lbl">HEARTBEAT → MUSIC CONNECTION</div>
+      <div class="pulse-mode" id="pulseMode">SYNCOPATION</div>
+    </div>
+ 
+    <div class="pulse-canvas-wrap">
+      <canvas class="pulse-canvas" id="pulseCanvas"></canvas>
+    </div>
+ 
+    <div class="conn-row" id="connRow">
+      <div class="conn-node">
+        <div class="conn-node-icon">❤️</div>
+        <div class="conn-node-lbl">HEART</div>
+        <div class="conn-node-val" id="cnHR">72</div>
+      </div>
+      <div class="conn-line">
+        <svg class="conn-svg" id="connSvg" preserveAspectRatio="none"></svg>
+      </div>
+      <div class="conn-node">
+        <div class="conn-node-icon">🎵</div>
+        <div class="conn-node-lbl">TEMPO</div>
+        <div class="conn-node-val" id="cnBPM">128</div>
+      </div>
+      <div class="conn-line">
+        <svg class="conn-svg" id="connSvg2" preserveAspectRatio="none"></svg>
+      </div>
+      <div class="conn-node">
+        <div class="conn-node-icon">🎸</div>
+        <div class="conn-node-lbl">CHORD</div>
+        <div class="conn-node-val" id="cnChord">Cm7</div>
+      </div>
+      <div class="conn-line">
+        <svg class="conn-svg" id="connSvg3" preserveAspectRatio="none"></svg>
+      </div>
+      <div class="conn-node">
+        <div class="conn-node-icon">🌀</div>
+        <div class="conn-node-lbl">GROOVE</div>
+        <div class="conn-node-val" id="cnGroove">1/8</div>
+      </div>
+    </div>
+  </div>
+ 
+  <!-- Tracks + instruments + engine -->
+  <div class="card card-tracks">
+ 
+    <div class="tracks-col">
+      <div class="tracks-lbl">LIBRARY</div>
+      <div class="track-list" id="trackList"></div>
+    </div>
+ 
+    <div class="instruments-col">
+      <div class="tracks-lbl">INSTRUMENTS</div>
+      <div class="instr-grid" id="instrGrid"></div>
+    </div>
+ 
+    <div class="engine-row">
+      <div class="engine-param">
+        <div class="ep-lbl">TEMPO</div>
+        <input class="ep-slider" type="range" min="60" max="200" value="128" oninput="setParam('tempo',this.value)">
+        <div class="ep-val" id="epTempo">128</div>
+      </div>
+      <div class="engine-param">
+        <div class="ep-lbl">REVERB</div>
+        <input class="ep-slider" type="range" min="0" max="100" value="40" oninput="setParam('reverb',this.value)">
+        <div class="ep-val" id="epReverb">40</div>
+      </div>
+      <div class="engine-param">
+        <div class="ep-lbl">DENSITY</div>
+        <input class="ep-slider" type="range" min="0" max="100" value="55" oninput="setParam('density',this.value)">
+        <div class="ep-val" id="epDensity">55</div>
+      </div>
+      <div class="engine-param">
+        <div class="ep-lbl">BIO MIX</div>
+        <input class="ep-slider" type="range" min="0" max="100" value="80" oninput="setParam('bio',this.value)">
+        <div class="ep-val" id="epBio">80</div>
+      </div>
+    </div>
+ 
+    <div class="chord-row">
+      <div class="chord-pill"><div class="cp-lbl">KEY</div><div class="cp-val" id="cpKey">Cm</div></div>
+      <div class="chord-pill"><div class="cp-lbl">CHORD</div><div class="cp-val" id="cpChord">Cm7</div></div>
+      <div class="chord-pill"><div class="cp-lbl">SCALE</div><div class="cp-val" id="cpScale">Dorian</div></div>
+      <div class="chord-pill"><div class="cp-lbl">GROOVE</div><div class="cp-val" id="cpGroove">Syncopated</div></div>
+    </div>
+ 
+  </div>
+ 
+</div>
+</body>
