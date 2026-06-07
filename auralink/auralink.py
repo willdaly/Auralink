@@ -99,6 +99,11 @@ class Auralink:
                 "bpm": round(effective, 1),
                 "heart_bpm": round(heart_bpm, 1),
                 "effective_bpm": round(effective, 1),
+                "heartbeat_source": (
+                    "Pulsoid"
+                    if isinstance(self.heart, PulsoidHeartbeat)
+                    else "Simulated"
+                ),
                 "zone": self._current_zone,
                 "style_label": self.engine.style_label,
                 "prompt": self._current_prompt,

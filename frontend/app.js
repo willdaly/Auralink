@@ -45,6 +45,7 @@ function applyState(s) {
   setText("cnHR", heartBpm);
   setText("cnBPM", tempoBpm);
   setText("epTempo", tempoBpm);
+  setText("heartbeatSource", `Heartbeat Source: ${s.heartbeat_source || "Unknown"}`);
 
   setText("artName", z.name);
   setText("artMeta", `${z.meta} · ${tempoBpm} BPM`);
