@@ -37,16 +37,17 @@ function send(msg) {
 // ── Render live state into the DOM ───────────────────────────────────────────
 function applyState(s) {
   state = s;
-  const bpm = Math.round(s.bpm || 0);
+  const heartBpm = Math.round((s.heart_bpm ?? s.bpm) || 0);
+  const tempoBpm = Math.round((s.effective_bpm ?? s.bpm) || 0);
   const z = ZONES[s.zone] || ZONES.rest;
 
-  setText("bpmNum", bpm);
-  setText("cnHR", bpm);
-  setText("cnBPM", bpm);
-  setText("epTempo", bpm);
+  setText("bpmNum", heartBpm);
+  setText("cnHR", heartBpm);
+  setText("cnBPM", tempoBpm);
+  setText("epTempo", tempoBpm);
 
   setText("artName", z.name);
-  setText("artMeta", `${z.meta} · ${bpm} BPM`);
+  setText("artMeta", `${z.meta} · ${tempoBpm} BPM`);
   setText("pulseMode", z.mode);
   setText("cnChord", z.chord);
   setText("cnGroove", z.groove);
@@ -64,7 +65,12 @@ function applyState(s) {
 
   // Bio toggle reflects whether we are following the heartbeat.
   const bio = $("bioToggle");
-  if (bio) bio.classList.toggle("on", !!s.bio_mode);
+  if (bio) {
+    bio.classList.toggle("on", !!s.bio_mode);
+    bio.disabled = s.manual_override_allowed === false;
+    bio.style.opacity = s.manual_override_allowed === false ? "0.55" : "1";
+    bio.style.cursor = s.manual_override_allowed === false ? "not-allowed" : "pointer";
+  }
 }
 
 function setText(id, v) {
@@ -74,10 +80,12 @@ function setText(id, v) {
 
 // ── Control handlers (referenced by inline onclick= in index.html) ───────────
 function togglePlay() { send({ action: state.playing ? "stop" : "play" }); }
-function toggleBio()  { send({ action: "toggle_bio" }); }
+function toggleBio()  {
+  if (state.manual_override_allowed === false) return;
+  send({ action: "toggle_bio" });
+}
 function setParam(name, value) {
-  if (name === "tempo") send({ action: "set_manual_bpm", value: Number(value) });
-  const map = { tempo: "epTempo", reverb: "epReverb", density: "epDensity", bio: "epBio" };
+  const map = { reverb: "epReverb", density: "epDensity", bio: "epBio" };
   setText(map[name], value);
 }
 // Cosmetic transport controls (no backend equivalent yet).

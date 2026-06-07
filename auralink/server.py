@@ -28,6 +28,18 @@ def create_app(link: Auralink) -> FastAPI:
     """Build the FastAPI app wired to a (model-loaded) Auralink instance."""
     api = FastAPI(title="AURALINK")
 
+    @api.on_event("startup")
+    async def on_startup() -> None:
+        # Keep heart telemetry live while the dashboard is open, even before
+        # audio playback starts, so displayed BPM reflects the watch feed.
+        await asyncio.to_thread(link.heart.start)
+
+    @api.on_event("shutdown")
+    async def on_shutdown() -> None:
+        # Stop any live audio first, then stop the heartbeat stream.
+        await asyncio.to_thread(link.stop_audio)
+        await asyncio.to_thread(link.heart.stop)
+
     @api.websocket("/ws")
     async def ws(websocket: WebSocket) -> None:
         await websocket.accept()

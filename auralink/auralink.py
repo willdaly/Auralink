@@ -9,7 +9,7 @@ import time
 import numpy as np
 
 from .engine import SAMPLE_RATE, MagentaEngine
-from .heartbeat import HeartbeatSource
+from .heartbeat import HeartbeatSource, PulsoidHeartbeat
 from .hr_zones import HR_ZONES
 
 
@@ -54,6 +54,11 @@ class Auralink:
             bio, manual = self._bio_mode, self._manual_bpm
         return self.heart.bpm if bio else manual
 
+    @property
+    def _manual_override_allowed(self) -> bool:
+        """Manual tempo is disabled when the source is live Pulsoid."""
+        return not isinstance(self.heart, PulsoidHeartbeat)
+
     def update_style_for_hr(self) -> None:
         """Retune Magenta's live style when the zone changes or tempo drifts."""
         bpm = self._effective_bpm()
@@ -71,25 +76,36 @@ class Auralink:
 
     def set_bio_mode(self, enabled: bool) -> None:
         """Follow the live heartbeat (True) or a manual tempo slider (False)."""
+        if not enabled and not self._manual_override_allowed:
+            return
         with self._lock:
             self._bio_mode = bool(enabled)
 
     def set_manual_bpm(self, bpm: float) -> None:
         """Set the manual tempo and switch off bio mode (UI slider drag)."""
+        if not self._manual_override_allowed:
+            return
         with self._lock:
             self._manual_bpm = float(bpm)
             self._bio_mode = False
 
     def get_state(self) -> dict:
         """Snapshot of live state for the dashboard (JSON-serialisable)."""
+        heart_bpm = float(self.heart.bpm)
         with self._lock:
+            effective = self._current_bpm or (heart_bpm if self._bio_mode else self._manual_bpm)
+            bio_mode = self._bio_mode
             return {
-                "bpm": round(self._current_bpm, 1),
+                "bpm": round(effective, 1),
+                "heart_bpm": round(heart_bpm, 1),
+                "effective_bpm": round(effective, 1),
                 "zone": self._current_zone,
                 "style_label": self.engine.style_label,
                 "prompt": self._current_prompt,
                 "playing": self._playing,
-                "bio_mode": self._bio_mode,
+                "bio_mode": bio_mode,
+                "manual_override_allowed": self._manual_override_allowed,
+                "tempo_source": "heartbeat" if bio_mode else "manual",
                 "manual_bpm": round(self._manual_bpm, 1),
             }
 
