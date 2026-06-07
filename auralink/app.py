@@ -71,6 +71,15 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
         help="Connect to Pulsoid and print live heart-rate messages for a few "
         "seconds, then exit. Verifies the token/watch without loading Magenta.",
     )
+    parser.add_argument(
+        "--serve",
+        action="store_true",
+        help="Launch the web dashboard (frontend/) and stream live heart-rate / "
+        "tempo / zone state to the browser. Audio still plays locally.",
+    )
+    parser.add_argument(
+        "--port", type=int, default=8000, help="Port for --serve (default 8000)."
+    )
     return parser.parse_args(argv)
 
 
@@ -119,7 +128,11 @@ def main(argv: list[str] | None = None) -> int:
         heart = SimulatedHeartbeat(bpm=args.bpm, drift=0.0 if args.steady else 8.0)
     app = Auralink(engine=engine, heart=heart)
 
-    if args.render is not None:
+    if args.serve:
+        from .server import serve
+
+        serve(app, port=args.port)
+    elif args.render is not None:
         app.render(args.render)
     else:
         app.run()
