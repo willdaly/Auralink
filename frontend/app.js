@@ -45,7 +45,15 @@ function applyState(s) {
   setText("cnHR", heartBpm);
   setText("cnBPM", tempoBpm);
   setText("epTempo", tempoBpm);
+  const source = (s.heartbeat_source || "Unknown").toLowerCase();
   setText("heartbeatSource", `Heartbeat Source: ${s.heartbeat_source || "Unknown"}`);
+  const sourceBadge = $("heartbeatSource");
+  if (sourceBadge) {
+    sourceBadge.classList.remove("source-pulsoid", "source-simulated", "source-unknown");
+    if (source === "pulsoid") sourceBadge.classList.add("source-pulsoid");
+    else if (source === "simulated") sourceBadge.classList.add("source-simulated");
+    else sourceBadge.classList.add("source-unknown");
+  }
 
   setText("artName", z.name);
   setText("artMeta", `${z.meta} · ${tempoBpm} BPM`);

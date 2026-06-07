@@ -87,6 +87,24 @@
     border-radius: 20px;
     padding: 5px 10px;
     white-space: nowrap;
+    transition: color 120ms ease, border-color 120ms ease, box-shadow 120ms ease, background 120ms ease;
+  }
+  .source-badge.source-pulsoid {
+    color: var(--red2);
+    border-color: rgba(232,96,74,0.45);
+    background: rgba(232,96,74,0.1);
+    box-shadow: inset 0 0 0 1px rgba(232,96,74,0.08), 0 0 8px rgba(232,96,74,0.16);
+  }
+  .source-badge.source-simulated {
+    color: var(--text2);
+    border-color: var(--border2);
+    background: rgba(255,255,255,0.04);
+    box-shadow: none;
+  }
+  .source-badge.source-unknown {
+    color: var(--amber);
+    border-color: rgba(232,168,74,0.35);
+    background: rgba(232,168,74,0.08);
   }
   .live-badge {
     display: flex; align-items: center; gap: 6px;
