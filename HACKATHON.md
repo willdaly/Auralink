@@ -48,11 +48,6 @@ The heartbeat is the *controller*; **Magenta RT2 is the instrument/sound engine.
 1. Does this change keep **Magenta RT2 in the live signal path**? If no → stop.
 2. Is Magenta the **instrument**, or did it slip to a side feature? Keep it central.
 3. Are we polishing something the judges won't hear? Refocus on the live loop.
-4. If we're using a raw sample/synth, is it **supporting** Magenta, not replacing it?
-
-> Lesson learned (6 Jun): we briefly replaced the MRT2 kick with a plain sample
-> sequencer. It sounded clean but used **zero Magenta** — off-challenge. A sample
-> may support the groove, but Magenta must remain the live instrument.
 
 ## Build plan (in priority order)
 - **P0 — Magenta live loop:** MRT2 streaming continuously on the M1 Pro using
@@ -75,20 +70,22 @@ The heartbeat is the *controller*; **Magenta RT2 is the instrument/sound engine.
   product's long-term differentiator but is **out of scope for the hackathon** —
   we are focused on getting one user working end-to-end first.
 
-## Sound-quality notes for MRT2 (the earlier kick sounded bad — fixable in Magenta)
-- NO SAMPLES. Magenta generates the kick and everything else.
-- Prompt richer than "kick drum": e.g. *"punchy four-on-the-floor techno kick,
-  tight, driving, deep sub"* (see HR_ZONES in auralink/app.py).
-- Lower `temperature` (~1.0) for a steadier kick; `drums=[1]` conditioning is on.
-- Generate a full groove (kick + bass + texture), not an isolated transient.
+## Sound-quality notes for MRT2
+- Keep prompts non-techno and non-fast-rhythm so style words do not fight pulse tempo
+  (see HR_ZONES in auralink/hr_zones.py).
+- Keep `temperature` low (default 0.9) for steadier pulse tracking.
+- Keep drum guidance high (`cfg_drums` default 6.0) so pulse onsets stay authoritative.
+- Use pulse-locked conditioning only: per-frame beat onsets from heart-rate BPM.
 
 ## Current status
 - ✅ Env ready: `.venv` (py3.12), `magenta-rt[mlx]` installed, `mrt2_small`
   checkpoint + shared resources downloaded. MRT2 generates at ~0.78× real-time
   factor on the M1 Pro (keeps ahead of playback).
-- ✅ **On-challenge live instrument working.** `auralink/app.py` = heartbeat → MRT2
+- ✅ **On-challenge live instrument working.** `auralink/auralink.py` = heartbeat → MRT2
   style; Magenta generates ALL audio (kick included). **No samples.**
-  - `auralink/engine.py` — MagentaEngine (live streaming + `set_style()` hook).
+  - `auralink/engine.py` — MagentaEngine (live streaming + pulse-tempo control).
+  - `auralink/auralink.py` — orchestrator (heart rate -> zone prompt + BPM updates).
+  - `auralink/hr_zones.py` — editable zone boundaries/prompts for collaborators.
   - `auralink/heartbeat.py` — SimulatedHeartbeat (demo) + PulsoidHeartbeat (live).
   - Verified: `--selftest` real-time OK; `--render` produces valid Magenta audio.
 - ⏭ Next: tune kick prompt/temperature for punch; wire the live Pulsoid heart
@@ -96,4 +93,3 @@ The heartbeat is the *controller*; **Magenta RT2 is the instrument/sound engine.
 
 ## Logistics
 - **Sun 7 Jun, 4:00 PM** — team presentations. 3:00 PM doc/prep phase.
-- Venue closes 11 PM Sat (no overnight). Build accordingly.

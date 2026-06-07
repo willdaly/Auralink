@@ -34,15 +34,6 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
         "locks to the heart-rate pulse more strongly over the style (default 6.0).",
     )
     parser.add_argument(
-        "--tempo-mode",
-        choices=("pulse", "constant"),
-        default="pulse",
-        help="How tempo reaches Magenta. 'pulse' (default) drives a per-frame "
-        "drum-onset pulse train at the heart rate so the kick tempo tracks the "
-        "body; 'constant' keeps the old always-on drums (tempo only hinted via "
-        "the style text).",
-    )
-    parser.add_argument(
         "--render",
         type=float,
         default=None,
@@ -60,15 +51,7 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
         default=None,
         metavar="SECONDS",
         help="De-risk spike: render SECONDS of audio with a drum pulse train at "
-        "--bpm (Magenta's MIDI-like drum onset per frame) and write a WAV. Use "
-        "--pulse-mode constant for an A/B against the old always-on drums.",
-    )
-    parser.add_argument(
-        "--pulse-mode",
-        choices=("pulse", "constant"),
-        default="pulse",
-        help="Drum conditioning for --pulse-test: 'pulse' = onset on beat frames "
-        "only (tempo-locked); 'constant' = drums on every frame (old behavior).",
+        "--bpm (Magenta's MIDI-like drum onset per frame) and write a WAV.",
     )
     parser.add_argument(
         "--pulsoid",
@@ -110,7 +93,6 @@ def main(argv: list[str] | None = None) -> int:
     engine = MagentaEngine(
         size=args.size,
         temperature=args.temperature,
-        tempo_mode=args.tempo_mode,
         cfg_drums=args.cfg_drums,
     )
     engine.load_model()
@@ -125,8 +107,8 @@ def main(argv: list[str] | None = None) -> int:
 
         label, prompt = hr_to_style(args.bpm)
         engine.set_style(prompt, label=f"{label} @ {args.bpm:.0f} BPM")
-        audio = engine.render_pulse(args.bpm, args.pulse_test, mode=args.pulse_mode)
-        path = f"auralink_pulse_{args.pulse_mode}_{int(round(args.bpm))}bpm.wav"
+        audio = engine.render_pulse(args.bpm, args.pulse_test)
+        path = f"auralink_pulse_{int(round(args.bpm))}bpm.wav"
         sf.write(path, audio, SAMPLE_RATE)
         print(f"Wrote {path} ({args.pulse_test:g}s).")
         return 0

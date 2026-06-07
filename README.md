@@ -26,18 +26,19 @@ Instead of just generating music *for* someone, AURALINK turns empathy and physi
 Let's turn collective physiology into live composition
 
 ## How it works (live instrument)
-A heartbeat plays Magenta RealTime 2 as a live instrument — **Magenta generates all of the audio, including the four-on-the-floor TR-808 kick.**
+A heartbeat plays Magenta RealTime 2 as a live instrument — **Magenta generates all of the audio, including the heartbeat-like kick pulse.**
 
 ```
 body (heartbeat)  ->  signal (BPM)  ->  Magenta RealTime 2  ->  sound
 ```
 
-The heart rate steers Magenta in real time: its heart-rate zone selects the live prompt (calm pads → steady 808 groove → driving techno → peak-time rave) and fills the tempo into the prompt, all re-embedded on the fly. A live heart rate comes from [Pulsoid](https://pulsoid.net/) (e.g. an Apple Watch); a simulated heartbeat drives the whole pipeline when no monitor is connected, so it is always demoable.
+The heart rate steers Magenta in real time on two axes: it selects a heart-rate-zone prompt (defined in [auralink/hr_zones.py](auralink/hr_zones.py)) and drives a per-frame drum-onset pulse train so kick timing tracks live BPM. A live heart rate comes from [Pulsoid](https://pulsoid.net/) (e.g. an Apple Watch); a simulated heartbeat drives the whole pipeline when no monitor is connected, so it is always demoable.
 
 **Components**
 - [auralink/engine.py](auralink/engine.py) — `MagentaEngine`: MRT2 (`mrt2_small`) streaming continuously, steerable live via `set_style()`. This is the instrument.
 - [auralink/heartbeat.py](auralink/heartbeat.py) — `SimulatedHeartbeat` (demo) and `PulsoidHeartbeat` (live heart rate via Pulsoid, e.g. an Apple Watch).
-- [auralink/app.py](auralink/app.py) — orchestrator mapping heart rate → Magenta style.
+- [auralink/auralink.py](auralink/auralink.py) — orchestration mapping heart rate -> style + pulse-tempo updates.
+- [auralink/app.py](auralink/app.py) — CLI wiring and entrypoint.
 
 **Requirements:** Apple Silicon Mac (`mrt2_small` streams in real time on an M1 Pro).
 
