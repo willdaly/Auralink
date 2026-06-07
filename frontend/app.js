@@ -54,11 +54,10 @@ function applyState(s) {
 
   setText("bpmNum", heartBpm);
   setText("cnHR", heartBpm);
-  setText("cnBPM", tempoBpm);
-  setText("epTempo", tempoBpm);
+  setText("cnSource", sourceLabel);
+  setText("epSource", sourceLabel);
   setText("lpSource", sourceLabel);
   setText("lpHeart", `${heartBpm} BPM`);
-  setText("lpTempo", `${tempoBpm} BPM`);
   setText("lpZone", s.zone || "rest");
   setText("heartbeatSource", `HEARTBEAT SOURCE: ${sourceLabel.toUpperCase()}`);
   const sourceBadge = $("heartbeatBadge");
@@ -70,7 +69,7 @@ function applyState(s) {
   }
 
   setText("artName", z.name);
-  setText("artMeta", `${z.meta} · ${tempoBpm} BPM`);
+  setText("artMeta", z.meta);
   setText("pulseMode", z.mode);
   setText("cnChord", z.chord);
   setText("cnGroove", z.groove);
