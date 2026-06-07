@@ -110,6 +110,10 @@ class PulsoidHeartbeat(HeartbeatSource):
             return self._bpm
 
     def start(self) -> None:
+        if self._thread is not None and self._thread.is_alive():
+            return
+        if self._stop.is_set():
+            self._stop = threading.Event()
         self._thread = threading.Thread(target=self._read_loop, daemon=True)
         self._thread.start()
 
@@ -166,6 +170,7 @@ class PulsoidHeartbeat(HeartbeatSource):
         self._close_ws()
         if self._thread is not None:
             self._thread.join(timeout=2.0)
+            self._thread = None
 
 
 def check_pulsoid(token: str | None = None, seconds: float = 20.0,

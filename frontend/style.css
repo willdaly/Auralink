@@ -72,20 +72,43 @@
     display: flex; align-items: center; justify-content: space-between;
     padding: 0 24px;
   }
+  .top-badges {
+    display: flex; align-items: center; gap: 8px;
+  }
   .logo { font-family: var(--mono); font-size: 13px; font-weight: 400; letter-spacing: 0.18em; color: var(--text); }
   .logo-accent { color: var(--red); }
   .live-badge {
     display: flex; align-items: center; gap: 6px;
     padding: 5px 12px; border-radius: 20px;
-    background: rgba(232,96,74,0.12); border: 1px solid rgba(232,96,74,0.25);
+    background: rgba(255,255,255,0.05);
+    border: 1px solid var(--border2);
+    transition: color 120ms ease, border-color 120ms ease, box-shadow 120ms ease, background 120ms ease;
+  }
+  .live-badge.source-pulsoid {
+    background: rgba(232,96,74,0.12);
+    border-color: rgba(232,96,74,0.35);
+    box-shadow: inset 0 0 0 1px rgba(232,96,74,0.08), 0 0 8px rgba(232,96,74,0.16);
+  }
+  .live-badge.source-simulated {
+    background: rgba(255,255,255,0.05);
+    border-color: var(--border2);
+    box-shadow: none;
+  }
+  .live-badge.source-unknown {
+    background: rgba(232,168,74,0.1);
+    border-color: rgba(232,168,74,0.35);
   }
   .live-dot {
-    width: 6px; height: 6px; border-radius: 50%; background: var(--red);
+    width: 6px; height: 6px; border-radius: 50%; background: var(--text2);
     animation: livepulse 1.6s ease-in-out infinite;
-    box-shadow: 0 0 6px var(--red);
+    box-shadow: 0 0 6px rgba(240,237,232,0.4);
   }
+  .live-badge.source-pulsoid .live-dot { background: var(--red); box-shadow: 0 0 6px var(--red); }
+  .live-badge.source-unknown .live-dot { background: var(--amber); box-shadow: 0 0 6px var(--amber); }
   @keyframes livepulse { 0%,100%{opacity:1;transform:scale(1)} 50%{opacity:0.5;transform:scale(0.7)} }
-  .live-txt { font-family: var(--mono); font-size: 9px; letter-spacing: 0.12em; color: var(--red); }
+  .live-txt { font-family: var(--mono); font-size: 9px; letter-spacing: 0.08em; color: var(--text2); }
+  .live-badge.source-pulsoid .live-txt { color: var(--red2); }
+  .live-badge.source-unknown .live-txt { color: var(--amber); }
  
   /* ── TOPBAR RIGHT — heartbeat strip ── */
   .card-heartbeat {
@@ -109,52 +132,42 @@
     grid-column: 1; grid-row: 2 / 4;
     display: flex; flex-direction: column;
     padding: 28px;
-    gap: 0;
+    gap: 12px;
+  }
+
+  /* live stats */
+  .live-stats {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 8px;
+    margin-bottom: 10px;
+  }
+  .stat-pill {
+    border: 1px solid var(--border);
+    background: var(--surface2);
+    border-radius: 12px;
+    padding: 10px 12px;
+  }
+  .sp-lbl {
+    font-family: var(--mono);
+    font-size: 8px;
+    color: var(--text3);
+    letter-spacing: 0.12em;
+    margin-bottom: 4px;
+  }
+  .sp-val {
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--text);
+    letter-spacing: 0.03em;
   }
  
-  .now-lbl { font-family: var(--mono); font-size: 8px; letter-spacing: 0.2em; color: var(--text3); margin-bottom: 22px; }
- 
-  /* art */
-  .art-wrap {
-    width: 100%; aspect-ratio: 1;
-    border-radius: 18px; overflow: hidden;
-    margin-bottom: 24px; position: relative; flex-shrink: 0;
+  .play-row {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 10px;
   }
-  .art-canvas { width: 100%; height: 100%; display: block; }
-  .art-overlay {
-    position: absolute; inset: 0;
-    background: linear-gradient(to bottom, transparent 50%, rgba(13,11,16,0.6) 100%);
-    pointer-events: none;
-  }
-  .art-track-info {
-    position: absolute; bottom: 16px; left: 16px; right: 16px;
-  }
-  .art-name { font-size: 17px; font-weight: 500; line-height: 1.2; margin-bottom: 3px; }
-  .art-meta { font-family: var(--mono); font-size: 9px; color: rgba(255,255,255,0.55); }
- 
-  /* progress */
-  .prog-track {
-    width: 100%; height: 2px; border-radius: 1px;
-    background: rgba(255,255,255,0.08);
-    cursor: pointer; position: relative; margin-bottom: 8px;
-  }
-  .prog-fill { height: 100%; border-radius: 1px; background: var(--red); transition: width 0.3s; position: relative; }
-  .prog-fill::after {
-    content: ''; position: absolute; right: -4px; top: -3px;
-    width: 8px; height: 8px; border-radius: 50%; background: var(--red);
-    box-shadow: 0 0 8px var(--red);
-  }
-  .prog-times { display: flex; justify-content: space-between; font-family: var(--mono); font-size: 9px; color: var(--text3); margin-bottom: 22px; }
- 
-  /* controls */
-  .controls { display: flex; align-items: center; justify-content: space-between; margin-bottom: 22px; }
-  .ctrl {
-    width: 38px; height: 38px; border-radius: 50%;
-    display: flex; align-items: center; justify-content: center;
-    border: none; background: transparent; cursor: pointer;
-    color: var(--text2); transition: all 0.15s;
-  }
-  .ctrl:hover { background: var(--surface2); color: var(--text); }
   .ctrl-play {
     width: 56px; height: 56px; border-radius: 50%;
     background: var(--red); border: none; cursor: pointer;
@@ -164,76 +177,9 @@
   }
   .ctrl-play:hover { transform: scale(1.06); box-shadow: 0 0 32px rgba(232,96,74,0.6); }
  
-  /* volume */
-  .vol-row { display: flex; align-items: center; gap: 10px; margin-bottom: 18px; }
-  .vol-icon { color: var(--text3); flex-shrink: 0; }
-  input[type=range] {
-    -webkit-appearance: none; appearance: none;
-    flex: 1; height: 2px; border-radius: 1px;
-    background: rgba(255,255,255,0.10); outline: none; cursor: pointer;
-  }
-  input[type=range]::-webkit-slider-thumb {
-    -webkit-appearance: none; appearance: none;
-    width: 12px; height: 12px; border-radius: 50%;
-    background: var(--text); cursor: pointer;
-    border: 2px solid var(--bg);
-  }
- 
-  /* bio toggle */
-  .bio-row {
-    display: flex; align-items: center; justify-content: space-between;
-    padding: 14px 16px; border-radius: 14px;
-    background: rgba(232,96,74,0.08); border: 1px solid rgba(232,96,74,0.18);
-  }
-  .bio-lbl { font-size: 12px; font-weight: 400; }
-  .bio-sub { font-family: var(--mono); font-size: 9px; color: var(--text3); margin-top: 2px; }
-  .toggle {
-    width: 42px; height: 26px; border-radius: 13px;
-    background: rgba(255,255,255,0.12); border: none; cursor: pointer;
-    position: relative; transition: background 0.25s; flex-shrink: 0;
-  }
-  .toggle.on { background: var(--red); box-shadow: 0 0 12px rgba(232,96,74,0.4); }
-  .toggle::after {
-    content: ''; position: absolute; top: 4px; left: 4px;
-    width: 18px; height: 18px; border-radius: 50%; background: white;
-    transition: transform 0.25s; box-shadow: 0 1px 4px rgba(0,0,0,0.3);
-  }
-  .toggle.on::after { transform: translateX(16px); }
- 
-  /* ── PULSE VISUALISER (right, row 2) ── */
-  .card-pulse {
-    grid-column: 2; grid-row: 2;
-    padding: 22px 24px;
-    display: flex; flex-direction: column; gap: 14px;
-  }
-  .pulse-header { display: flex; align-items: center; justify-content: space-between; }
-  .pulse-lbl { font-family: var(--mono); font-size: 9px; letter-spacing: 0.18em; color: var(--text3); }
-  .pulse-mode { font-family: var(--mono); font-size: 9px; color: var(--amber); letter-spacing: 0.10em; }
- 
-  /* big pulse canvas */
-  .pulse-canvas-wrap { position: relative; flex: 1; min-height: 0; }
-  .pulse-canvas { width: 100%; height: 120px; display: block; }
- 
-  /* connection line — heartbeat → music */
-  .conn-row {
-    display: flex; align-items: center; gap: 12px;
-  }
-  .conn-node {
-    display: flex; flex-direction: column; align-items: center; gap: 4px;
-    padding: 10px 14px; border-radius: 12px;
-    border: 1px solid var(--border); background: var(--surface2);
-    flex-shrink: 0;
-  }
-  .conn-node-icon { font-size: 16px; }
-  .conn-node-lbl { font-family: var(--mono); font-size: 8px; color: var(--text3); }
-  .conn-node-val { font-family: var(--mono); font-size: 13px; color: var(--text); }
-  .conn-line { flex: 1; height: 1px; position: relative; overflow: visible; }
-  .conn-svg { width: 100%; height: 32px; display: block; overflow: visible; }
-  .conn-path { fill: none; stroke-width: 1.5; stroke-linecap: round; }
- 
   /* ── TRACKS (right, row 3) ── */
   .card-tracks {
-    grid-column: 2; grid-row: 3;
+    grid-column: 2; grid-row: 2 / 4;
     display: grid;
     grid-template-columns: 1fr 1fr;
     gap: 10px;
@@ -279,7 +225,7 @@
   /* engine params */
   .engine-row {
     grid-column: 1 / -1;
-    display: grid; grid-template-columns: repeat(4, 1fr);
+    display: grid; grid-template-columns: repeat(3, 1fr);
     gap: 8px;
   }
   .engine-param {

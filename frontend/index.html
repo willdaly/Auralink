@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AURALINK — Player</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,200;0,9..40,300;0,9..40,400;0,9..40,500;1,9..40,300&family=DM+Mono:wght@300;400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+    <div class="shell">
+ 
+  <!-- Logo -->
+  <div class="card card-logo">
+    <div class="logo">AURA<span class="logo-accent">·</span>LINK</div>
+    <div class="top-badges">
+      <div class="live-badge" id="heartbeatBadge"><div class="live-dot"></div><div class="live-txt" id="heartbeatSource">HEARTBEAT SOURCE: SIMULATED</div></div>
+    </div>
+  </div>
+ 
+  <!-- Heartbeat strip -->
+  <div class="card card-heartbeat">
+    <div class="hb-label">CARDIAC RHYTHM</div>
+    <div class="hb-canvas-wrap"><canvas class="hb-canvas" id="hbCanvas"></canvas></div>
+    <div class="hb-bpm">
+      <div class="hb-num" id="bpmNum">72</div>
+      <div class="hb-unit">BPM</div>
+    </div>
+  </div>
+ 
+  <!-- Player -->
+  <div class="card card-player">
+    <div class="live-stats">
+      <div class="stat-pill"><div class="sp-lbl">HEART</div><div class="sp-val" id="lpHeart">0 BPM</div></div>
+      <div class="stat-pill"><div class="sp-lbl">ZONE</div><div class="sp-val" id="lpZone">rest</div></div>
+    </div>
+
+    <div class="play-row">
+      <button class="ctrl-play" id="playBtn" onclick="togglePlay()">
+        <svg id="playIcon" width="20" height="20" viewBox="0 0 20 20" fill="none"><path d="M7 4.5l10 5.5-10 5.5V4.5z" fill="white"/></svg>
+      </button>
+    </div>
+  </div>
+ 
+  <!-- Tracks + instruments + engine -->
+  <div class="card card-tracks">
+ 
+    <div class="tracks-col">
+      <div class="tracks-lbl">LIBRARY</div>
+      <div class="track-list" id="trackList"></div>
+    </div>
+ 
+    <div class="instruments-col">
+      <div class="tracks-lbl">INSTRUMENTS</div>
+      <div class="instr-grid" id="instrGrid"></div>
+    </div>
+ 
+    <div class="engine-row">
+      <div class="engine-param">
+        <div class="ep-lbl">REVERB</div>
+        <input class="ep-slider" type="range" min="0" max="100" value="40" oninput="setParam('reverb',this.value)">
+        <div class="ep-val" id="epReverb">40</div>
+      </div>
+      <div class="engine-param">
+        <div class="ep-lbl">DENSITY</div>
+        <input class="ep-slider" type="range" min="0" max="100" value="55" oninput="setParam('density',this.value)">
+        <div class="ep-val" id="epDensity">55</div>
+      </div>
+      <div class="engine-param">
+        <div class="ep-lbl">BIO MIX</div>
+        <input class="ep-slider" type="range" min="0" max="100" value="80" oninput="setParam('bio',this.value)">
+        <div class="ep-val" id="epBio">80</div>
+      </div>
+    </div>
+ 
+    <div class="chord-row">
+      <div class="chord-pill"><div class="cp-lbl">KEY</div><div class="cp-val" id="cpKey">Cm</div></div>
+      <div class="chord-pill"><div class="cp-lbl">CHORD</div><div class="cp-val" id="cpChord">Cm7</div></div>
+      <div class="chord-pill"><div class="cp-lbl">SCALE</div><div class="cp-val" id="cpScale">Dorian</div></div>
+      <div class="chord-pill"><div class="cp-lbl">GROOVE</div><div class="cp-val" id="cpGroove">Syncopated</div></div>
+    </div>
+ 
+  </div>
+ 
+</div>
+<script src="app.js"></script>
+</body>

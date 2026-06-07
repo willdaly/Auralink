@@ -16,3 +16,9 @@ websocket-client
 
 # Auto-loads a local .env file (e.g. PULSOID_TOKEN) at startup. See .env.example.
 python-dotenv
+
+# Web dashboard bridge (--serve): serves frontend/ and streams live heart-rate /
+# tempo / zone state to the browser over a WebSocket. Audio stays local (Magenta
+# via sounddevice); the browser is a telemetry + control surface only.
+fastapi
+uvicorn[standard]
