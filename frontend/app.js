@@ -53,8 +53,6 @@ function applyState(s) {
   const source = sourceLabel.toLowerCase();
 
   setText("bpmNum", heartBpm);
-  setText("cnHR", heartBpm);
-  setText("cnSource", sourceLabel);
   setText("epSource", sourceLabel);
   setText("lpSource", sourceLabel);
   setText("lpHeart", `${heartBpm} BPM`);
@@ -68,9 +66,6 @@ function applyState(s) {
     else sourceBadge.classList.add("source-unknown");
   }
 
-  setText("pulseMode", z.mode);
-  setText("cnChord", z.chord);
-  setText("cnGroove", z.groove);
   setText("cpKey", z.key);
   setText("cpChord", z.chord);
   setText("cpScale", z.scale);

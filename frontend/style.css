@@ -198,40 +198,9 @@
   }
   .toggle.on::after { transform: translateX(16px); }
  
-  /* ── PULSE VISUALISER (right, row 2) ── */
-  .card-pulse {
-    grid-column: 2; grid-row: 2;
-    padding: 22px 24px;
-    display: flex; flex-direction: column; gap: 14px;
-  }
-  .pulse-header { display: flex; align-items: center; justify-content: space-between; }
-  .pulse-lbl { font-family: var(--mono); font-size: 9px; letter-spacing: 0.18em; color: var(--text3); }
-  .pulse-mode { font-family: var(--mono); font-size: 9px; color: var(--amber); letter-spacing: 0.10em; }
- 
-  /* big pulse canvas */
-  .pulse-canvas-wrap { position: relative; flex: 1; min-height: 0; }
-  .pulse-canvas { width: 100%; height: 120px; display: block; }
- 
-  /* connection line — heartbeat → music */
-  .conn-row {
-    display: flex; align-items: center; gap: 12px;
-  }
-  .conn-node {
-    display: flex; flex-direction: column; align-items: center; gap: 4px;
-    padding: 10px 14px; border-radius: 12px;
-    border: 1px solid var(--border); background: var(--surface2);
-    flex-shrink: 0;
-  }
-  .conn-node-icon { font-size: 16px; }
-  .conn-node-lbl { font-family: var(--mono); font-size: 8px; color: var(--text3); }
-  .conn-node-val { font-family: var(--mono); font-size: 13px; color: var(--text); }
-  .conn-line { flex: 1; height: 1px; position: relative; overflow: visible; }
-  .conn-svg { width: 100%; height: 32px; display: block; overflow: visible; }
-  .conn-path { fill: none; stroke-width: 1.5; stroke-linecap: round; }
- 
   /* ── TRACKS (right, row 3) ── */
   .card-tracks {
-    grid-column: 2; grid-row: 3;
+    grid-column: 2; grid-row: 2 / 4;
     display: grid;
     grid-template-columns: 1fr 1fr;
     gap: 10px;
