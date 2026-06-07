@@ -34,24 +34,34 @@ function send(msg) {
   if (ws && ws.readyState === WebSocket.OPEN) ws.send(JSON.stringify(msg));
 }
 
+function resolveSourceLabel(s) {
+  const explicit = (s.heartbeat_source || "").trim();
+  if (explicit) return explicit;
+  // Backward-compatible inference for older server payloads.
+  if (s.manual_override_allowed === false) return "Pulsoid";
+  if (s.manual_override_allowed === true) return "Simulated";
+  return "Unknown";
+}
+
 // ── Render live state into the DOM ───────────────────────────────────────────
 function applyState(s) {
   state = s;
   const heartBpm = Math.round((s.heart_bpm ?? s.bpm) || 0);
   const tempoBpm = Math.round((s.effective_bpm ?? s.bpm) || 0);
   const z = ZONES[s.zone] || ZONES.rest;
+  const sourceLabel = resolveSourceLabel(s);
+  const source = sourceLabel.toLowerCase();
 
   setText("bpmNum", heartBpm);
   setText("cnHR", heartBpm);
   setText("cnBPM", tempoBpm);
   setText("epTempo", tempoBpm);
-  setText("lpSource", s.heartbeat_source || "Unknown");
+  setText("lpSource", sourceLabel);
   setText("lpHeart", `${heartBpm} BPM`);
   setText("lpTempo", `${tempoBpm} BPM`);
   setText("lpZone", s.zone || "rest");
-  const source = (s.heartbeat_source || "Unknown").toLowerCase();
-  setText("heartbeatSource", `Heartbeat Source: ${s.heartbeat_source || "Unknown"}`);
-  const sourceBadge = $("heartbeatSource");
+  setText("heartbeatSource", `HEARTBEAT SOURCE: ${sourceLabel.toUpperCase()}`);
+  const sourceBadge = $("heartbeatBadge");
   if (sourceBadge) {
     sourceBadge.classList.remove("source-pulsoid", "source-simulated", "source-unknown");
     if (source === "pulsoid") sourceBadge.classList.add("source-pulsoid");

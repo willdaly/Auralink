@@ -77,47 +77,38 @@
   }
   .logo { font-family: var(--mono); font-size: 13px; font-weight: 400; letter-spacing: 0.18em; color: var(--text); }
   .logo-accent { color: var(--red); }
-  .source-badge {
-    font-family: var(--mono);
-    font-size: 8px;
-    letter-spacing: 0.1em;
-    color: var(--text2);
-    background: rgba(255,255,255,0.04);
-    border: 1px solid var(--border2);
-    border-radius: 20px;
-    padding: 5px 10px;
-    white-space: nowrap;
-    transition: color 120ms ease, border-color 120ms ease, box-shadow 120ms ease, background 120ms ease;
-  }
-  .source-badge.source-pulsoid {
-    color: var(--red2);
-    border-color: rgba(232,96,74,0.45);
-    background: rgba(232,96,74,0.1);
-    box-shadow: inset 0 0 0 1px rgba(232,96,74,0.08), 0 0 8px rgba(232,96,74,0.16);
-  }
-  .source-badge.source-simulated {
-    color: var(--text2);
-    border-color: var(--border2);
-    background: rgba(255,255,255,0.04);
-    box-shadow: none;
-  }
-  .source-badge.source-unknown {
-    color: var(--amber);
-    border-color: rgba(232,168,74,0.35);
-    background: rgba(232,168,74,0.08);
-  }
   .live-badge {
     display: flex; align-items: center; gap: 6px;
     padding: 5px 12px; border-radius: 20px;
-    background: rgba(232,96,74,0.12); border: 1px solid rgba(232,96,74,0.25);
+    background: rgba(255,255,255,0.05);
+    border: 1px solid var(--border2);
+    transition: color 120ms ease, border-color 120ms ease, box-shadow 120ms ease, background 120ms ease;
+  }
+  .live-badge.source-pulsoid {
+    background: rgba(232,96,74,0.12);
+    border-color: rgba(232,96,74,0.35);
+    box-shadow: inset 0 0 0 1px rgba(232,96,74,0.08), 0 0 8px rgba(232,96,74,0.16);
+  }
+  .live-badge.source-simulated {
+    background: rgba(255,255,255,0.05);
+    border-color: var(--border2);
+    box-shadow: none;
+  }
+  .live-badge.source-unknown {
+    background: rgba(232,168,74,0.1);
+    border-color: rgba(232,168,74,0.35);
   }
   .live-dot {
-    width: 6px; height: 6px; border-radius: 50%; background: var(--red);
+    width: 6px; height: 6px; border-radius: 50%; background: var(--text2);
     animation: livepulse 1.6s ease-in-out infinite;
-    box-shadow: 0 0 6px var(--red);
+    box-shadow: 0 0 6px rgba(240,237,232,0.4);
   }
+  .live-badge.source-pulsoid .live-dot { background: var(--red); box-shadow: 0 0 6px var(--red); }
+  .live-badge.source-unknown .live-dot { background: var(--amber); box-shadow: 0 0 6px var(--amber); }
   @keyframes livepulse { 0%,100%{opacity:1;transform:scale(1)} 50%{opacity:0.5;transform:scale(0.7)} }
-  .live-txt { font-family: var(--mono); font-size: 9px; letter-spacing: 0.12em; color: var(--red); }
+  .live-txt { font-family: var(--mono); font-size: 9px; letter-spacing: 0.08em; color: var(--text2); }
+  .live-badge.source-pulsoid .live-txt { color: var(--red2); }
+  .live-badge.source-unknown .live-txt { color: var(--amber); }
  
   /* ── TOPBAR RIGHT — heartbeat strip ── */
   .card-heartbeat {
