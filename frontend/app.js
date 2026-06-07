@@ -45,6 +45,10 @@ function applyState(s) {
   setText("cnHR", heartBpm);
   setText("cnBPM", tempoBpm);
   setText("epTempo", tempoBpm);
+  setText("lpSource", s.heartbeat_source || "Unknown");
+  setText("lpHeart", `${heartBpm} BPM`);
+  setText("lpTempo", `${tempoBpm} BPM`);
+  setText("lpZone", s.zone || "rest");
   const source = (s.heartbeat_source || "Unknown").toLowerCase();
   setText("heartbeatSource", `Heartbeat Source: ${s.heartbeat_source || "Unknown"}`);
   const sourceBadge = $("heartbeatSource");
@@ -97,19 +101,10 @@ function setParam(name, value) {
   const map = { reverb: "epReverb", density: "epDensity", bio: "epBio" };
   setText(map[name], value);
 }
-// Cosmetic transport controls (no backend equivalent yet).
-function prevTrack() {}
-function nextTrack() {}
-function seekBack() {}
-function seekFwd() {}
 
 window.togglePlay = togglePlay;
 window.toggleBio = toggleBio;
 window.setParam = setParam;
-window.prevTrack = prevTrack;
-window.nextTrack = nextTrack;
-window.seekBack = seekBack;
-window.seekFwd = seekFwd;
 
 // ── Heartbeat ECG canvas (animation speed follows live BPM) ──────────────────
 function startHeartbeatCanvas() {
