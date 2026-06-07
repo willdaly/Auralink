@@ -53,8 +53,6 @@ function applyState(s) {
   const source = sourceLabel.toLowerCase();
 
   setText("bpmNum", heartBpm);
-  setText("epSource", sourceLabel);
-  setText("lpSource", sourceLabel);
   setText("lpHeart", `${heartBpm} BPM`);
   setText("lpZone", s.zone || "rest");
   setText("heartbeatSource", `HEARTBEAT SOURCE: ${sourceLabel.toUpperCase()}`);
