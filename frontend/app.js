@@ -78,14 +78,6 @@ function applyState(s) {
       : '<path d="M7 4.5l10 5.5-10 5.5V4.5z" fill="white"/>';
   }
 
-  // Bio toggle reflects whether we are following the heartbeat.
-  const bio = $("bioToggle");
-  if (bio) {
-    bio.classList.toggle("on", !!s.bio_mode);
-    bio.disabled = s.manual_override_allowed === false;
-    bio.style.opacity = s.manual_override_allowed === false ? "0.55" : "1";
-    bio.style.cursor = s.manual_override_allowed === false ? "not-allowed" : "pointer";
-  }
 }
 
 function setText(id, v) {
@@ -95,17 +87,12 @@ function setText(id, v) {
 
 // ── Control handlers (referenced by inline onclick= in index.html) ───────────
 function togglePlay() { send({ action: state.playing ? "stop" : "play" }); }
-function toggleBio()  {
-  if (state.manual_override_allowed === false) return;
-  send({ action: "toggle_bio" });
-}
 function setParam(name, value) {
   const map = { reverb: "epReverb", density: "epDensity", bio: "epBio" };
   setText(map[name], value);
 }
 
 window.togglePlay = togglePlay;
-window.toggleBio = toggleBio;
 window.setParam = setParam;
 
 // ── Heartbeat ECG canvas (animation speed follows live BPM) ──────────────────

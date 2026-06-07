@@ -177,27 +177,6 @@
   }
   .ctrl-play:hover { transform: scale(1.06); box-shadow: 0 0 32px rgba(232,96,74,0.6); }
  
-  /* bio toggle */
-  .bio-row {
-    display: flex; align-items: center; justify-content: space-between;
-    padding: 14px 16px; border-radius: 14px;
-    background: rgba(232,96,74,0.08); border: 1px solid rgba(232,96,74,0.18);
-  }
-  .bio-lbl { font-size: 12px; font-weight: 400; }
-  .bio-sub { font-family: var(--mono); font-size: 9px; color: var(--text3); margin-top: 2px; }
-  .toggle {
-    width: 42px; height: 26px; border-radius: 13px;
-    background: rgba(255,255,255,0.12); border: none; cursor: pointer;
-    position: relative; transition: background 0.25s; flex-shrink: 0;
-  }
-  .toggle.on { background: var(--red); box-shadow: 0 0 12px rgba(232,96,74,0.4); }
-  .toggle::after {
-    content: ''; position: absolute; top: 4px; left: 4px;
-    width: 18px; height: 18px; border-radius: 50%; background: white;
-    transition: transform 0.25s; box-shadow: 0 1px 4px rgba(0,0,0,0.3);
-  }
-  .toggle.on::after { transform: translateX(16px); }
- 
   /* ── TRACKS (right, row 3) ── */
   .card-tracks {
     grid-column: 2; grid-row: 2 / 4;
