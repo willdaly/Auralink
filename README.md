@@ -18,7 +18,7 @@ Graduate Student in Artificial Intelligence at Northeastern University. Backgrou
 Self-taught frontend developer transitioning into full stack coding program. Background in Entrepreneurship.
 
 -Linh Le
-Computer science student, full stack development, web and app dev, visual artist, florist
+Computer science student, with a background in full-stack development, web and app dev. Also a visual artist and florist! Developed kinematic music interaction features.
 
 ## What's interesting about it?
 Instead of just generating music *for* someone, AURALINK turns empathy and physiology *into* the composition itself. It shifts the paradigm from passive streaming to organic, shared audio improvisation—giving a completely new meaning to "jamming" with someone.
