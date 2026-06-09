@@ -161,14 +161,17 @@ class Auralink:
     def _poll_loop(self) -> None:
         self._csv_file = self._csv_path.open("w", newline="")
         self._csv_writer = csv.writer(self._csv_file)
-        self._csv_writer.writerow(["timestamp", "heart_bpm", "music_bpm", "zone", "corr_10s"])
+        self._csv_writer.writerow(["timestamp", "heart_bpm", "music_bpm", "zone", "corr_10s", "hrv_rmssd_ms"])
         self._csv_file.flush()
         print(f"Logging to {self._csv_path}")
 
         heart_buf: list[float] = []
         music_buf: list[float] = []
+        rr_buf: list[float] = []   # real RR intervals from measured_at timestamps
         _tick = 0
         _corr: str = "n/a"
+        _hrv: str = "n/a"
+        _hrv_val: float = -1.0
 
         while not self._stop_poll.is_set() and not self.engine.stopped:
             self.update_style_for_hr()
@@ -181,21 +184,38 @@ class Auralink:
                 heart_buf.append(heart_bpm)
                 music_buf.append(music_bpm)
 
-                # Compute Pearson r over the last 10 samples every 10 seconds
-                if len(heart_buf) >= 10 and _tick % 40 == 0:
-                    h = np.array(heart_buf[-10:])
-                    m = np.array(music_buf[-10:])
-                    if h.std() > 0 and m.std() > 0:
-                        _corr = f"{np.corrcoef(h, m)[0, 1]:.3f}"
-                    else:
-                        _corr = "1.000"  # perfectly flat = perfectly correlated
-                    print(f"  --> Correlation (last 10s): r = {_corr}", flush=True)
+                # Collect real RR intervals from Pulsoid measured_at timestamps
+                if hasattr(self.heart, "pop_rr_intervals"):
+                    rr_buf.extend(self.heart.pop_rr_intervals())
+                    if len(rr_buf) > 60:  # keep last ~60 beats
+                        rr_buf = rr_buf[-60:]
+
+                # Every 10 seconds: recompute correlation and HRV
+                if _tick % 40 == 0:
+                    if len(heart_buf) >= 10:
+                        h = np.array(heart_buf[-10:])
+                        m = np.array(music_buf[-10:])
+                        if h.std() > 0 and m.std() > 0:
+                            _corr = f"{np.corrcoef(h, m)[0, 1]:.3f}"
+                        else:
+                            _corr = "1.000"
+
+                    # RMSSD from real RR intervals
+                    if len(rr_buf) >= 2:
+                        diffs = np.diff(np.array(rr_buf))
+                        _hrv_val = float(np.sqrt(np.mean(diffs ** 2)))
+                        _hrv = f"{_hrv_val:.1f}"
+
+                    print(
+                        f"  --> Correlation (last 10s): r = {_corr}  |  HRV RMSSD: {_hrv} ms",
+                        flush=True,
+                    )
 
                 print(
-                    f"Heart: {heart_bpm:5.1f} BPM  |  Music: {music_bpm:5.1f} BPM  |  Zone: {zone:<15}  |  r = {_corr}",
+                    f"Heart: {heart_bpm:5.1f} BPM  |  Music: {music_bpm:5.1f} BPM  |  Zone: {zone:<15}  |  r = {_corr}  |  HRV: {_hrv} ms",
                     flush=True,
                 )
-                self._csv_writer.writerow([time.strftime("%Y-%m-%dT%H:%M:%S"), heart_bpm, music_bpm, zone, _corr])
+                self._csv_writer.writerow([time.strftime("%Y-%m-%dT%H:%M:%S"), heart_bpm, music_bpm, zone, _corr, _hrv])
                 self._csv_file.flush()
             time.sleep(0.25)
 

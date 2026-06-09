@@ -103,11 +103,21 @@ class PulsoidHeartbeat(HeartbeatSource):
         self._thread: threading.Thread | None = None
         self._ws = None
         self._lock = threading.Lock()
+        # RR intervals derived from consecutive measured_at timestamps (ms)
+        self._rr_intervals: list[float] = []
+        self._last_measured_at: float | None = None
 
     @property
     def bpm(self) -> float:
         with self._lock:
             return self._bpm
+
+    def pop_rr_intervals(self) -> list[float]:
+        """Return and clear new RR intervals collected since last call."""
+        with self._lock:
+            rr = self._rr_intervals[:]
+            self._rr_intervals.clear()
+            return rr
 
     def start(self) -> None:
         if self._thread is not None and self._thread.is_alive():
@@ -135,6 +145,7 @@ class PulsoidHeartbeat(HeartbeatSource):
                     try:
                         payload = json.loads(raw)
                         bpm = float(payload["data"]["heart_rate"])
+                        measured_at = float(payload.get("measured_at") or 0)
                     except (ValueError, KeyError, TypeError):
                         continue
                     if not 30.0 <= bpm <= 240.0:  # sanity window
@@ -145,9 +156,16 @@ class PulsoidHeartbeat(HeartbeatSource):
                                 self._smoothing * bpm
                                 + (1 - self._smoothing) * self._bpm
                             )
+                            # Use timestamp difference as real RR interval
+                            if measured_at and self._last_measured_at:
+                                rr = measured_at - self._last_measured_at
+                                if 300.0 <= rr <= 2000.0:  # 30–200 BPM sanity
+                                    self._rr_intervals.append(rr)
                         else:
                             self._bpm = bpm
                             self._got_first = True
+                        if measured_at:
+                            self._last_measured_at = measured_at
             except Exception as exc:  # noqa: BLE001 - reconnect on any drop
                 if self._stop.is_set():
                     break
