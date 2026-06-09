@@ -3,8 +3,10 @@
 
 from __future__ import annotations
 
+import csv
 import threading
 import time
+from pathlib import Path
 
 import numpy as np
 
@@ -47,6 +49,9 @@ class Auralink:
         self._stream = None
         self._poll_thread: threading.Thread | None = None
         self._stop_poll = threading.Event()
+        self._csv_path = Path(f"auralink_{time.strftime('%Y%m%d_%H%M%S')}.csv")
+        self._csv_file = None
+        self._csv_writer = None
 
     def _effective_bpm(self) -> float:
         """The BPM that drives Magenta: live heartbeat, or the manual override."""
@@ -154,9 +159,48 @@ class Auralink:
             self._playing = True
 
     def _poll_loop(self) -> None:
+        self._csv_file = self._csv_path.open("w", newline="")
+        self._csv_writer = csv.writer(self._csv_file)
+        self._csv_writer.writerow(["timestamp", "heart_bpm", "music_bpm", "zone", "corr_10s"])
+        self._csv_file.flush()
+        print(f"Logging to {self._csv_path}")
+
+        heart_buf: list[float] = []
+        music_buf: list[float] = []
+        _tick = 0
+        _corr: str = "n/a"
+
         while not self._stop_poll.is_set() and not self.engine.stopped:
             self.update_style_for_hr()
+            _tick += 1
+            if _tick % 4 == 0:  # ~1 Hz
+                heart_bpm = round(self.heart.bpm, 1)
+                music_bpm = round(self.engine.bpm, 1)
+                zone = self._current_zone or "—"
+
+                heart_buf.append(heart_bpm)
+                music_buf.append(music_bpm)
+
+                # Compute Pearson r over the last 10 samples every 10 seconds
+                if len(heart_buf) >= 10 and _tick % 40 == 0:
+                    h = np.array(heart_buf[-10:])
+                    m = np.array(music_buf[-10:])
+                    if h.std() > 0 and m.std() > 0:
+                        _corr = f"{np.corrcoef(h, m)[0, 1]:.3f}"
+                    else:
+                        _corr = "1.000"  # perfectly flat = perfectly correlated
+                    print(f"  --> Correlation (last 10s): r = {_corr}", flush=True)
+
+                print(
+                    f"Heart: {heart_bpm:5.1f} BPM  |  Music: {music_bpm:5.1f} BPM  |  Zone: {zone:<15}  |  r = {_corr}",
+                    flush=True,
+                )
+                self._csv_writer.writerow([time.strftime("%Y-%m-%dT%H:%M:%S"), heart_bpm, music_bpm, zone, _corr])
+                self._csv_file.flush()
             time.sleep(0.25)
+
+        self._csv_file.close()
+        self._csv_file = None
 
     def stop_audio(self) -> None:
         """Stop live playback and release the audio device."""
