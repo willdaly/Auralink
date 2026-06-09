@@ -20,6 +20,9 @@ Self-taught frontend developer transitioning into full stack coding program. Bac
 -Linh Le
 Computer science student, with a background in full-stack development, web and app dev. Also a visual artist and florist! Developed kinematic music interaction features.
 
+Anees Kazi,
+I am an instructor at Mass General Brigham and Harvard Medical School, working on AI for Medical applications. I am interested in the intersection of AI, Bio-medical signals and Music.
+
 ## What's interesting about it?
 Instead of just generating music *for* someone, AURALINK turns empathy and physiology *into* the composition itself. It shifts the paradigm from passive streaming to organic, shared audio improvisation—giving a completely new meaning to "jamming" with someone.
 
