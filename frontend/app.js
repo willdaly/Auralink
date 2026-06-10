@@ -85,13 +85,8 @@ function setText(id, v) {
 
 // ── Control handlers (referenced by inline onclick= in index.html) ───────────
 function togglePlay() { send({ action: state.playing ? "stop" : "play" }); }
-function setParam(name, value) {
-  const map = { reverb: "epReverb", density: "epDensity", bio: "epBio" };
-  setText(map[name], value);
-}
 
 window.togglePlay = togglePlay;
-window.setParam = setParam;
 
 // ── Heartbeat ECG canvas (animation speed follows live BPM) ──────────────────
 function startHeartbeatCanvas() {

@@ -23,15 +23,17 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     parser.add_argument(
         "--temperature",
         type=float,
-        default=0.9,
-        help="Magenta sampling temperature. Lower = steadier kick (default 0.9).",
+        default=1.05,
+        help="Magenta sampling temperature. Higher = more melodic variation; "
+        "lower = steadier kick (default 1.05).",
     )
     parser.add_argument(
         "--cfg-drums",
         type=float,
-        default=6.0,
+        default=3.5,
         help="Drum-pulse authority (classifier-free guidance). Higher = the kick "
-        "locks to the heart-rate pulse more strongly over the style (default 6.0).",
+        "locks to the heart-rate pulse more strongly over the style; lower lets "
+        "the music breathe (default 3.5).",
     )
     parser.add_argument(
         "--render",
