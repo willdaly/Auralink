@@ -173,6 +173,223 @@ class PulsoidHeartbeat(HeartbeatSource):
             self._thread = None
 
 
+def parse_hr_measurement(data: bytes | bytearray) -> float | None:
+    """Parse a BLE Heart Rate Measurement value (characteristic 0x2A37).
+
+    Per the Bluetooth Heart Rate Service spec, byte 0 is a flags field whose
+    bit 0 selects the heart-rate value width: 0 = uint8 in byte 1, 1 = uint16
+    little-endian in bytes 1-2. (Higher flag bits cover sensor contact, energy
+    expended and RR intervals, which we don't need.) Returns the BPM, or None
+    if the payload is too short to contain a value.
+    """
+    if not data:
+        return None
+    flags = data[0]
+    if flags & 0x01:  # 16-bit heart rate
+        if len(data) < 3:
+            return None
+        return float(int.from_bytes(bytes(data[1:3]), "little"))
+    if len(data) < 2:
+        return None
+    return float(data[1])
+
+
+class BleHeartbeat(HeartbeatSource):
+    """Live heart rate from a Bluetooth LE chest/arm strap (Polar, Garmin,
+    Wahoo, Coros, CooSpo, ...).
+
+    Any strap that implements the standard BLE Heart Rate Service (0x180D)
+    works without per-vendor code: we subscribe to the Heart Rate Measurement
+    characteristic (0x2A37) and smooth the notified BPM into a stable tempo for
+    Magenta, exactly like PulsoidHeartbeat — so the orchestrator is unchanged.
+    Unlike Pulsoid this needs no account, token or network; it talks to the
+    strap directly over Bluetooth.
+
+    By default it auto-discovers the first device advertising the heart-rate
+    service. Pass ``name=`` to match a substring of the advertised name, or
+    ``address=`` to target a specific device. The bleak backend runs its async
+    work on a private event loop in a background thread.
+    """
+
+    HR_SERVICE = "0000180d-0000-1000-8000-00805f9b34fb"
+    HR_MEASUREMENT_CHAR = "00002a37-0000-1000-8000-00805f9b34fb"
+
+    def __init__(
+        self,
+        address: str | None = None,
+        name: str | None = None,
+        smoothing: float = 0.3,
+    ) -> None:
+        self._address = address
+        self._name = name
+        self._smoothing = smoothing
+        self._bpm = 60.0
+        self._got_first = False
+        self._stop = threading.Event()
+        self._thread: threading.Thread | None = None
+        self._loop = None
+        self._lock = threading.Lock()
+
+    @property
+    def bpm(self) -> float:
+        with self._lock:
+            return self._bpm
+
+    def start(self) -> None:
+        if self._thread is not None and self._thread.is_alive():
+            return
+        if self._stop.is_set():
+            self._stop = threading.Event()
+        self._thread = threading.Thread(target=self._run, daemon=True)
+        self._thread.start()
+
+    def _run(self) -> None:
+        import asyncio
+
+        self._loop = asyncio.new_event_loop()
+        asyncio.set_event_loop(self._loop)
+        try:
+            self._loop.run_until_complete(self._read_loop())
+        finally:
+            self._loop.close()
+            self._loop = None
+
+    async def _discover(self):
+        from bleak import BleakScanner
+
+        if self._address:
+            return await BleakScanner.find_device_by_address(
+                self._address, timeout=10.0
+            )
+
+        def match(device, adv) -> bool:
+            if self._name and self._name.lower() in (device.name or "").lower():
+                return True
+            uuids = [u.lower() for u in (adv.service_uuids or [])]
+            return self.HR_SERVICE in uuids
+
+        return await BleakScanner.find_device_by_filter(match, timeout=10.0)
+
+    async def _read_loop(self) -> None:
+        import asyncio
+
+        from bleak import BleakClient
+
+        backoff = 1.0
+        while not self._stop.is_set():
+            try:
+                device = await self._discover()
+                if device is None:
+                    print("No BLE heart-rate strap found; rescanning...")
+                    await asyncio.sleep(backoff)
+                    backoff = min(backoff * 2, 10.0)
+                    continue
+                async with BleakClient(device) as client:
+                    backoff = 1.0
+                    print(
+                        "Connected to heart-rate strap: "
+                        f"{device.name or device.address}"
+                    )
+                    await client.start_notify(
+                        self.HR_MEASUREMENT_CHAR, self._on_measurement
+                    )
+                    while not self._stop.is_set() and client.is_connected:
+                        await asyncio.sleep(0.2)
+                    if client.is_connected:
+                        await client.stop_notify(self.HR_MEASUREMENT_CHAR)
+            except Exception as exc:  # noqa: BLE001 - reconnect on any drop
+                if self._stop.is_set():
+                    break
+                print(f"BLE strap connection lost ({exc}); reconnecting...")
+                await asyncio.sleep(backoff)
+                backoff = min(backoff * 2, 10.0)
+
+    def _on_measurement(self, _characteristic, data: bytearray) -> None:
+        bpm = parse_hr_measurement(data)
+        if bpm is None or not 30.0 <= bpm <= 240.0:  # sanity window
+            return
+        with self._lock:
+            if self._got_first:
+                self._bpm = (
+                    self._smoothing * bpm + (1 - self._smoothing) * self._bpm
+                )
+            else:
+                self._bpm = bpm
+                self._got_first = True
+
+    def stop(self) -> None:
+        self._stop.set()
+        loop = self._loop
+        if loop is not None:
+            try:  # wake the loop so it sees _stop promptly
+                loop.call_soon_threadsafe(lambda: None)
+            except Exception:  # noqa: BLE001
+                pass
+        if self._thread is not None:
+            self._thread.join(timeout=5.0)
+            self._thread = None
+
+
+def check_ble(address: str | None = None, name: str | None = None,
+              seconds: float = 20.0) -> int:
+    """Connect to a BLE heart-rate strap and print live BPM, then exit.
+
+    Verifies the strap/Bluetooth path without loading Magenta — the BLE analog
+    of check_pulsoid. Returns 0 if at least one reading arrived, else 1.
+    """
+    import asyncio
+
+    from bleak import BleakClient, BleakScanner
+
+    async def run() -> int:
+        if address:
+            print(f"Looking for strap at address {address} ...")
+            device = await BleakScanner.find_device_by_address(address, timeout=10.0)
+        else:
+            label = f"name~={name!r}" if name else "any heart-rate strap"
+            print(f"Scanning for {label} (service 0x180D) ...")
+
+            def match(dev, adv) -> bool:
+                if name and name.lower() in (dev.name or "").lower():
+                    return True
+                uuids = [u.lower() for u in (adv.service_uuids or [])]
+                return BleHeartbeat.HR_SERVICE in uuids
+
+            device = await BleakScanner.find_device_by_filter(match, timeout=10.0)
+
+        if device is None:
+            print("No BLE heart-rate strap found. Is it on and worn (sensors "
+                  "need skin contact to advertise)? Is Bluetooth enabled and "
+                  "permitted for your terminal?")
+            return 1
+
+        received = 0
+
+        def on_measurement(_char, data: bytearray) -> None:
+            nonlocal received
+            bpm = parse_hr_measurement(data)
+            if bpm is not None:
+                received += 1
+                print(f"  -> {bpm:.0f} BPM")
+
+        print(f"Connecting to {device.name or device.address} ...")
+        async with BleakClient(device) as client:
+            await client.start_notify(
+                BleHeartbeat.HR_MEASUREMENT_CHAR, on_measurement
+            )
+            await asyncio.sleep(seconds)
+            await client.stop_notify(BleHeartbeat.HR_MEASUREMENT_CHAR)
+
+        if received:
+            print(f"OK: received {received} reading(s). The strap works.")
+            return 0
+        print("Connected but no readings arrived. Make sure the strap has skin "
+              "contact and isn't paired to another app.")
+        return 1
+
+    return asyncio.run(run())
+
+
 def check_pulsoid(token: str | None = None, seconds: float = 20.0,
                   url: str | None = None) -> int:
     """Print live Pulsoid messages for a few seconds to verify the feed.
