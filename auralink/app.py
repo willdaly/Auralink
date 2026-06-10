@@ -6,9 +6,11 @@ import argparse
 from .auralink import Auralink, hr_to_style
 from .engine import SAMPLE_RATE, MagentaEngine
 from .heartbeat import (
+    BleHeartbeat,
     HeartbeatSource,
     PulsoidHeartbeat,
     SimulatedHeartbeat,
+    check_ble,
     check_pulsoid,
 )
 
@@ -74,6 +76,30 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
         "seconds, then exit. Verifies the token/watch without loading Magenta.",
     )
     parser.add_argument(
+        "--ble",
+        action="store_true",
+        help="Use a Bluetooth LE heart-rate strap (Polar, Garmin, Wahoo, ...) "
+        "instead of the simulated heartbeat. No account or network needed.",
+    )
+    parser.add_argument(
+        "--ble-name",
+        default=None,
+        help="Connect to the strap whose advertised name contains this text "
+        "(e.g. 'Polar'). Default: auto-pick the first heart-rate strap found.",
+    )
+    parser.add_argument(
+        "--ble-address",
+        default=None,
+        help="Connect to the strap at this exact Bluetooth address/UUID, "
+        "skipping the name/service scan.",
+    )
+    parser.add_argument(
+        "--ble-check",
+        action="store_true",
+        help="Connect to a BLE heart-rate strap and print live BPM for a few "
+        "seconds, then exit. Verifies the strap without loading Magenta.",
+    )
+    parser.add_argument(
         "--serve",
         action="store_true",
         help="Launch the web dashboard (frontend/) and stream live heart-rate / "
@@ -101,6 +127,10 @@ def main(argv: list[str] | None = None) -> int:
     if args.pulsoid_check:
         return check_pulsoid(token=args.pulsoid_token)
 
+    # Quick BLE strap check — no Magenta model needed.
+    if args.ble_check:
+        return check_ble(address=args.ble_address, name=args.ble_name)
+
     engine = MagentaEngine(
         size=args.size,
         temperature=args.temperature,
@@ -126,6 +156,8 @@ def main(argv: list[str] | None = None) -> int:
 
     if args.pulsoid:
         heart: HeartbeatSource = PulsoidHeartbeat(token=args.pulsoid_token)
+    elif args.ble:
+        heart = BleHeartbeat(address=args.ble_address, name=args.ble_name)
     else:
         heart = SimulatedHeartbeat(bpm=args.bpm, drift=0.0 if args.steady else 8.0)
     app = Auralink(engine=engine, heart=heart)
