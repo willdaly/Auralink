@@ -45,7 +45,9 @@ class Auralink:
         self._playing = False
         # Non-blocking playback handles.
         self._stream = None
+        self._stream_lock = threading.Lock()
         self._poll_thread: threading.Thread | None = None
+        self._watchdog_thread: threading.Thread | None = None
         self._stop_poll = threading.Event()
 
     def _effective_bpm(self) -> float:
@@ -120,36 +122,46 @@ class Auralink:
         np.clip(out, -1.0, 1.0, out=out)
         return out.astype(np.float32)
 
+    def _audio_callback(self, outdata, frames, _time, status) -> None:
+        if status:
+            print(f"Playback status: {status}")
+        outdata[:] = self.mix_block(frames)
+
+    def _open_stream(self):
+        """Open and start a fresh output stream on the current default device."""
+        import sounddevice as sd
+
+        stream = sd.OutputStream(
+            samplerate=SAMPLE_RATE,
+            channels=2,
+            dtype="float32",
+            callback=self._audio_callback,
+        )
+        stream.start()
+        return stream
+
     def start_audio(self) -> None:
         """Start live playback in the background (non-blocking).
 
         Opens the audio device, starts Magenta + the heartbeat, and runs a poll
-        thread that retunes the style as the heart rate changes. Returns once
-        audio is flowing; call stop_audio() to end it.
+        thread that retunes the style as the heart rate changes, plus a watchdog
+        that reopens the output stream if the device drops. Returns once audio is
+        flowing; call stop_audio() to end it.
         """
-        import sounddevice as sd
-
         if self._playing:
             return
         self.update_style_for_hr()
         self.engine.start()
         self.heart.start()
-
-        def callback(outdata, frames, _time, status):
-            if status:
-                print(f"Playback status: {status}")
-            outdata[:] = self.mix_block(frames)
-
-        self._stream = sd.OutputStream(
-            samplerate=SAMPLE_RATE,
-            channels=2,
-            dtype="float32",
-            callback=callback,
-        )
-        self._stream.start()
+        with self._stream_lock:
+            self._stream = self._open_stream()
         self._stop_poll.clear()
         self._poll_thread = threading.Thread(target=self._poll_loop, daemon=True)
         self._poll_thread.start()
+        self._watchdog_thread = threading.Thread(
+            target=self._watchdog_loop, daemon=True
+        )
+        self._watchdog_thread.start()
         with self._lock:
             self._playing = True
 
@@ -157,6 +169,43 @@ class Auralink:
         while not self._stop_poll.is_set() and not self.engine.stopped:
             self.update_style_for_hr()
             time.sleep(0.25)
+
+    def _watchdog_loop(self) -> None:
+        """Reopen the output stream if it dies under us.
+
+        sounddevice binds an OutputStream to a device when it opens; if that
+        device goes away (the aux jack is unplugged/replugged, an interface
+        sleeps), PortAudio aborts the stream and `stream.active` goes False.
+        Nothing else notices — the engine keeps generating into its buffer, so
+        the music just goes silent. Here we poll the stream and rebuild it
+        against the current default device, resuming audio without a restart.
+        If the device is still gone the reopen raises and we retry next tick.
+        """
+        while not self._stop_poll.is_set() and not self.engine.stopped:
+            time.sleep(0.5)
+            if self._stop_poll.is_set():
+                break
+            with self._stream_lock:
+                stream = self._stream
+                try:
+                    alive = stream is not None and stream.active
+                except Exception:
+                    alive = False
+                if alive:
+                    continue
+                if stream is not None:
+                    print("Audio device dropped; reconnecting output stream...")
+                    try:
+                        stream.close()
+                    except Exception:
+                        pass
+                    self._stream = None
+                try:
+                    self._stream = self._open_stream()
+                    print("Audio output reconnected.")
+                except Exception as exc:
+                    self._stream = None
+                    print(f"Audio reconnect failed ({exc}); retrying...")
 
     def stop_audio(self) -> None:
         """Stop live playback and release the audio device."""
@@ -166,10 +215,14 @@ class Auralink:
         if self._poll_thread is not None:
             self._poll_thread.join(timeout=1.0)
             self._poll_thread = None
-        if self._stream is not None:
-            self._stream.stop()
-            self._stream.close()
-            self._stream = None
+        if self._watchdog_thread is not None:
+            self._watchdog_thread.join(timeout=1.0)
+            self._watchdog_thread = None
+        with self._stream_lock:
+            if self._stream is not None:
+                self._stream.stop()
+                self._stream.close()
+                self._stream = None
         self.heart.stop()
         self.engine.stop()
         with self._lock:
