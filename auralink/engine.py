@@ -185,6 +185,28 @@ class MagentaEngine:
             # Non-MLX backends (or older MLX) don't need per-thread streams.
             pass
 
+    @staticmethod
+    def _release_mlx_cache() -> None:
+        """Drop MLX's cached (freed-but-retained) Metal buffers.
+
+        While streaming, MLX keeps freed Metal buffers in a reuse pool. Over
+        minutes of continuous generation that pool grows until Metal refuses
+        new allocations and `generate()` dies with
+        "[metal::malloc] Resource limit (...) exceeded" — which stops all
+        audio (the generation thread sets _stop and run() exits cleanly, so it
+        looks like the music simply stopped). Releasing the cache once per
+        chunk (~1x/second) keeps the buffer count bounded. Only unused cached
+        buffers are dropped — live arrays are untouched — so generation output
+        is unchanged; the cost is re-acquiring buffers, which is cheap next to
+        a chunk of model inference.
+        """
+        try:
+            import mlx.core as mx
+
+            mx.clear_cache()
+        except Exception:
+            pass
+
     def _generate_loop(self) -> None:
         self._ensure_thread_stream()
         self.warmup_pulse()  # settle onto the pulse before any audio is heard
@@ -195,6 +217,7 @@ class MagentaEngine:
                 print(f"Magenta generation error: {exc}")
                 self._stop.set()
                 break
+            self._release_mlx_cache()  # bound Metal buffer growth on long runs
             while not self._stop.is_set():
                 try:
                     self._audio_q.put(chunk, timeout=0.1)
